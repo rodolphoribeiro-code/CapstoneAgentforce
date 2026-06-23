@@ -44,6 +44,20 @@ variables:
         description: "True after send_code confirms a Contact exists for the given email"
     otp_send_message: mutable string = ""
         description: "Message returned by send_code to show the customer"
+    customer_profile_loaded: mutable boolean = False
+        description: "True after GetCustomerProfile has been called for this session"
+    customer_is_vip: mutable boolean = False
+        description: "True if customer has 5 or more confirmed bookings"
+    customer_vip_tier: mutable string = ""
+        description: "VIP tier: Standard, VIP, or Gold VIP"
+    customer_favourite_restaurant: mutable string = ""
+        description: "Restaurant the customer has booked most"
+    customer_total_bookings: mutable number = 0
+        description: "Total number of bookings for this customer"
+    customer_profile_summary: mutable string = ""
+        description: "One-line profile summary for agent personalisation"
+    customer_profile_greeted: mutable boolean = False
+        description: "True after the VIP/profile greeting has been delivered — routing actions become available after this"
     EndUserId: linked string
         source: @MessagingSession.MessagingEndUserId
         description: "Messaging end user Id"
@@ -310,24 +324,85 @@ subagent auth_verify_code:
                     filter_from_agent: False
 
 subagent reservation_hub:
-    description: "Post-authentication routing hub. Routes verified customers to create, modify, or cancel a reservation."
+    description: "Post-authentication routing hub. Loads the customer's unified profile from booking history, applies VIP personalisation, then routes to create, modify, or cancel."
     before_reasoning:
         if @variables.customer_authenticated == False:
             transition to @subagent.authentication_gate
     reasoning:
         instructions: ->
-            | Welcome back, {!@variables.customer_name}! What would you like to do with your reservation?
-              Route to the correct subagent based on what the customer wants.
+            if @variables.customer_profile_loaded == False:
+                run @actions.get_customer_profile
+                    with contactId = @variables.customer_contact_id
+                    set @variables.customer_profile_loaded = @outputs.found
+                    set @variables.customer_is_vip = @outputs.isVip
+                    set @variables.customer_vip_tier = @outputs.vipTier
+                    set @variables.customer_favourite_restaurant = @outputs.favouriteRestaurant
+                    set @variables.customer_total_bookings = @outputs.totalBookings
+                    set @variables.customer_profile_summary = @outputs.profileSummary
+
+            if @variables.customer_is_vip == True:
+                | Welcome back, {!@variables.customer_name}! 🌟
+                  You are a {!@variables.customer_vip_tier} guest — thank you for your loyalty!
+                  As a VIP member you enjoy priority seating and a complimentary welcome drink.
+                  Your favourite restaurant is {!@variables.customer_favourite_restaurant}.
+                  What would you like to do today — make a new reservation, modify, or cancel an existing one?
+            else:
+                | Welcome back, {!@variables.customer_name}!
+                  What would you like to do today — make a new reservation, modify, or cancel an existing one?
 
         actions:
             go_to_create: @utils.transition to @subagent.create_reservation
                 description: "Customer wants to make a new reservation"
+                available when @variables.customer_profile_greeted == True
             go_to_modify: @utils.transition to @subagent.modify_reservation
                 description: "Customer wants to change an existing reservation"
+                available when @variables.customer_profile_greeted == True
             go_to_cancel: @utils.transition to @subagent.cancel_reservation
                 description: "Customer wants to cancel an existing reservation"
+                available when @variables.customer_profile_greeted == True
             go_back: @utils.transition to @subagent.aria_router
                 description: "Customer wants to do something else"
+                available when @variables.customer_profile_greeted == True
+
+    after_reasoning:
+        set @variables.customer_profile_greeted = True
+
+    actions:
+        get_customer_profile:
+            target: "apex://GetCustomerProfile"
+            description: "Retrieve unified customer profile — booking history, VIP status, and favourite restaurant"
+            inputs:
+                contactId: string
+                    description: "Salesforce Contact Id of the authenticated customer"
+                    is_required: True
+            outputs:
+                found: boolean
+                    filter_from_agent: True
+                contactName: string
+                    filter_from_agent: True
+                totalBookings: object
+                    complex_data_type_name: "lightning__integerType"
+                    filter_from_agent: True
+                confirmedBookings: object
+                    complex_data_type_name: "lightning__integerType"
+                    filter_from_agent: True
+                cancelledBookings: object
+                    complex_data_type_name: "lightning__integerType"
+                    filter_from_agent: True
+                isVip: boolean
+                    filter_from_agent: True
+                vipTier: string
+                    filter_from_agent: False
+                favouriteRestaurant: string
+                    filter_from_agent: False
+                lastVisitDate: string
+                    filter_from_agent: True
+                preferredDietaryOption: string
+                    filter_from_agent: True
+                profileSummary: string
+                    filter_from_agent: False
+                errorMessage: string
+                    filter_from_agent: True
 
 subagent create_reservation:
     description: "Creates a new restaurant reservation for a verified customer. Checks restaurant existence and availability before creating the booking."
