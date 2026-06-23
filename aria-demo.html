@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aria Diner Agent — Interactive Demo</title>
+<style>
+:root {
+  --sf-blue: #0070d2;
+  --sf-dark: #032d60;
+  --sf-teal: #00a1e0;
+  --sf-green: #2e844a;
+  --sf-yellow: #f4bc25;
+  --sf-red:  #ba0517;
+  --sf-orange: #e07000;
+  --sf-purple: #9050e9;
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --border: #d8dde6;
+  --text: #1b1f2b;
+  --muted: #54698d;
+  --code-bg: #0d1117;
+  --code-fg: #c9d1d9;
+  --code-keyword: #ff7b72;
+  --code-string: #a5d6ff;
+  --code-comment: #8b949e;
+  --code-var: #79c0ff;
+  --code-action: #ffa657;
+  --code-pipe: #56d364;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+/* ── HEADER ── */
+header {
+  background: linear-gradient(135deg, var(--sf-dark) 0%, #0a3878 100%);
+  color: #fff;
+  padding: 3rem 2rem 2.5rem;
+  text-align: center;
+}
+header .badge {
+  display: inline-block;
+  background: var(--sf-teal);
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .25rem .75rem;
+  border-radius: 20px;
+  margin-bottom: 1rem;
+}
+header h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: .5rem; }
+header p  { font-size: 1rem; opacity: .8; max-width: 620px; margin: 0 auto; }
+
+/* ── NAV TABS ── */
+.tabs {
+  background: var(--sf-dark);
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.tab-btn {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: rgba(255,255,255,.65);
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 500;
+  padding: .9rem 1.4rem;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: #fff; border-bottom-color: rgba(255,255,255,.3); }
+.tab-btn.active { color: #fff; border-bottom-color: var(--sf-teal); }
+
+/* ── MAIN ── */
+.tab-panel { display: none; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+.tab-panel.active { display: block; }
+
+/* ── SECTION TITLES ── */
+.section-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sf-dark);
+  margin-bottom: 1.5rem;
+  padding-bottom: .5rem;
+  border-bottom: 2px solid var(--sf-teal);
+}
+.section-subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sf-dark);
+  margin: 1.5rem 0 .75rem;
+}
+
+/* ── CHAT DEMO ── */
+.demo-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+@media(max-width:820px){ .demo-layout { grid-template-columns: 1fr; } }
+
+.chat-window {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  overflow: hidden;
+  position: sticky;
+  top: 60px;
+}
+.chat-header {
+  background: var(--sf-dark);
+  color: #fff;
+  padding: 1rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.chat-avatar {
+  width: 38px; height: 38px;
+  background: var(--sf-teal);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+}
+.chat-header-info h3 { font-size: .9rem; font-weight: 700; }
+.chat-header-info span { font-size: .75rem; opacity: .7; }
+.online-dot {
+  width: 8px; height: 8px;
+  background: #2e844a;
+  border-radius: 50%;
+  margin-left: auto;
+  box-shadow: 0 0 0 2px rgba(46,132,74,.3);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.5} }
+
+.chat-messages {
+  padding: 1rem;
+  height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  background: #f8f9fb;
+}
+.msg {
+  max-width: 85%;
+  font-size: .875rem;
+  line-height: 1.5;
+  padding: .6rem .9rem;
+  border-radius: 12px;
+  animation: fadeIn .3s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.msg.agent {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px 12px 12px 2px;
+  align-self: flex-start;
+  color: var(--text);
+}
+.msg.user {
+  background: var(--sf-blue);
+  color: #fff;
+  border-radius: 12px 12px 2px 12px;
+  align-self: flex-end;
+}
+.msg.system-note {
+  background: #fff8e1;
+  border: 1px solid #f4bc25;
+  color: #7d5a00;
+  border-radius: 8px;
+  font-size: .78rem;
+  align-self: center;
+  max-width: 95%;
+  text-align: center;
+  padding: .4rem .8rem;
+}
+.msg-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  margin-bottom: .2rem;
+  opacity: .6;
+}
+
+.chat-input-area {
+  padding: .75rem 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: .5rem;
+  background: #fff;
+}
+.chat-input-area input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  outline: none;
+}
+.chat-input-area input:focus { border-color: var(--sf-teal); }
+.send-btn {
+  background: var(--sf-blue);
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: .5rem 1rem;
+  font-size: .875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+.send-btn:hover { background: var(--sf-dark); }
+
+/* Scenario buttons */
+.scenario-btns {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.scenario-btn {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .6rem 1rem;
+  font-size: .85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.scenario-btn:hover { border-color: var(--sf-teal); background: #f0fbff; }
+.scenario-btn.active { border-color: var(--sf-blue); background: #e8f4ff; font-weight: 600; }
+.scenario-btn .icon { font-size: 1.1rem; }
+
+/* Analysis panel */
+.analysis-panel {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-top: .5rem;
+}
+.analysis-panel h4 {
+  font-size: .875rem;
+  font-weight: 700;
+  color: var(--sf-dark);
+  margin-bottom: .75rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.subagent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: var(--sf-dark);
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  padding: .2rem .6rem;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.var-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .8rem;
+  margin-top: .75rem;
+}
+.var-table th {
+  background: #f4f6f9;
+  padding: .4rem .6rem;
+  text-align: left;
+  font-weight: 600;
+  color: var(--muted);
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.var-table td { padding: .4rem .6rem; border-top: 1px solid #f0f0f0; font-family: monospace; }
+.var-true  { color: var(--sf-green); font-weight: 700; }
+.var-false { color: var(--muted); }
+.var-set   { color: var(--sf-blue); font-weight: 600; }
+
+/* ── ARCHITECTURE ── */
+.arch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+.arch-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+  border-left: 4px solid var(--sf-teal);
+  transition: box-shadow .2s;
+}
+.arch-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+.arch-card h3 {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--sf-dark);
+  margin-bottom: .5rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.arch-card p { font-size: .83rem; color: var(--muted); }
+.arch-card .tag {
+  display: inline-block;
+  background: #f0f0f0;
+  color: var(--muted);
+  font-size: .7rem;
+  padding: .15rem .5rem;
+  border-radius: 20px;
+  margin-top: .5rem;
+  margin-right: .25rem;
+}
+.arch-card .tag.auth { background: #fff3cd; color: #7d5a00; }
+.arch-card .tag.apex { background: #e8f4ff; color: var(--sf-blue); }
+.arch-card .tag.hub  { background: #f0f0ff; color: var(--sf-purple); }
+.arch-card .tag.free { background: #e8f8ee; color: var(--sf-green); }
+
+/* flow diagram */
+.flow-diagram {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+.flow-row { display: flex; justify-content: center; align-items: center; gap: .5rem; flex-wrap: wrap; margin: .5rem 0; }
+.flow-node {
+  background: var(--sf-dark);
+  color: #fff;
+  border-radius: 8px;
+  padding: .4rem .9rem;
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.flow-node.start { background: var(--sf-teal); }
+.flow-node.auth  { background: var(--sf-orange); }
+.flow-node.safe  { background: var(--sf-green); }
+.flow-node.end   { background: var(--sf-purple); }
+.flow-node.warn  { background: var(--sf-red); }
+.flow-arrow { color: var(--muted); font-size: 1.2rem; }
+.flow-label { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+
+/* ── CODE VIEWER ── */
+.code-tabs { display: flex; gap: .25rem; margin-bottom: 0; flex-wrap: wrap; }
+.code-tab-btn {
+  background: #1e2330;
+  color: rgba(255,255,255,.5);
+  border: none;
+  border-radius: 6px 6px 0 0;
+  padding: .4rem .9rem;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.code-tab-btn.active { background: var(--code-bg); color: #fff; }
+.code-block {
+  background: var(--code-bg);
+  border-radius: 0 8px 8px 8px;
+  padding: 1.25rem 1.5rem;
+  overflow-x: auto;
+  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  font-size: .82rem;
+  line-height: 1.7;
+  color: var(--code-fg);
+  position: relative;
+}
+.code-block pre { white-space: pre; }
+/* syntax highlight spans */
+.kw  { color: var(--code-keyword); }
+.st  { color: var(--code-string); }
+.cm  { color: var(--code-comment); font-style: italic; }
+.vr  { color: var(--code-var); }
+.ac  { color: var(--code-action); }
+.pi  { color: var(--code-pipe); }
+.ln  { color: #636e7b; user-select: none; display: inline-block; width: 2.2rem; text-align: right; margin-right: 1.2rem; }
+
+/* annotation overlay */
+.annotated-line { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: .2rem; }
+.annotation {
+  background: rgba(255,123,114,.12);
+  border: 1px solid rgba(255,123,114,.3);
+  border-radius: 6px;
+  padding: .2rem .6rem;
+  font-size: .72rem;
+  color: #ffb3ae;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+.annotation.green { background: rgba(86,211,100,.1); border-color: rgba(86,211,100,.3); color: #56d364; }
+.annotation.blue  { background: rgba(121,192,255,.1); border-color: rgba(121,192,255,.3); color: #79c0ff; }
+.annotation.yellow{ background: rgba(255,166,87,.1); border-color: rgba(255,166,87,.3); color: #ffa657; }
+
+/* ── VARIABLES ── */
+.var-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.var-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+.var-card .var-name { font-family: monospace; font-size: .85rem; font-weight: 700; color: var(--sf-blue); }
+.var-card .var-type { font-size: .72rem; color: var(--muted); margin: .2rem 0 .5rem; }
+.var-card .var-desc { font-size: .8rem; color: var(--text); }
+.var-card .var-default {
+  display: inline-block;
+  background: #f4f6f9;
+  font-family: monospace;
+  font-size: .75rem;
+  padding: .15rem .5rem;
+  border-radius: 4px;
+  margin-top: .4rem;
+  color: var(--sf-green);
+}
+
+/* ── APEX ── */
+.apex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
+}
+.apex-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+.apex-card h3 { font-family: monospace; font-size: .9rem; color: var(--sf-dark); margin-bottom: .4rem; }
+.apex-card .desc { font-size: .82rem; color: var(--muted); margin-bottom: .75rem; }
+.io-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: .3rem; }
+.io-item { font-family: monospace; font-size: .78rem; padding: .2rem 0; border-bottom: 1px solid #f4f6f9; display: flex; gap: .5rem; align-items: center; }
+.io-item:last-child { border-bottom: none; }
+.io-type { color: var(--sf-teal); font-size: .72rem; }
+
+/* chips */
+.chip {
+  display: inline-block;
+  font-size: .7rem;
+  font-weight: 700;
+  padding: .15rem .5rem;
+  border-radius: 20px;
+}
+.chip-in  { background: #e8f4ff; color: var(--sf-blue); }
+.chip-out { background: #e8f8ee; color: var(--sf-green); }
+.chip-new { background: #fff3cd; color: #7d5a00; }
+
+/* ── EXECUTION MODEL ── */
+.phase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+@media(max-width:720px){ .phase-grid { grid-template-columns: 1fr; } }
+.phase-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-top: 4px solid;
+}
+.phase-card.p1 { border-color: var(--sf-orange); }
+.phase-card.p2 { border-color: var(--sf-blue); }
+.phase-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .75rem; }
+.phase-card ul { padding-left: 1.2rem; font-size: .85rem; color: var(--muted); }
+.phase-card ul li { margin-bottom: .4rem; }
+
+.turn-flow {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+.turn-step {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+.turn-num {
+  width: 28px; height: 28px;
+  background: var(--sf-teal);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.turn-step-content h4 { font-size: .875rem; font-weight: 700; color: var(--sf-dark); }
+.turn-step-content p  { font-size: .82rem; color: var(--muted); }
+
+/* info box */
+.info-box {
+  background: #e8f4ff;
+  border: 1px solid #b3d4f5;
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  font-size: .83rem;
+  color: #032d60;
+  margin: 1rem 0;
+  display: flex;
+  gap: .6rem;
+  align-items: flex-start;
+}
+.warn-box {
+  background: #fff8e1;
+  border: 1px solid #f4bc25;
+  border-radius: 8px;
+  padding: .75rem 1rem;
+  font-size: .83rem;
+  color: #7d5a00;
+  margin: 1rem 0;
+  display: flex;
+  gap: .6rem;
+  align-items: flex-start;
+}
+
+/* ── responsive ── */
+@media(max-width:600px){
+  header h1 { font-size: 1.5rem; }
+  .tab-btn { padding: .7rem .9rem; font-size: .8rem; }
+  .tab-panel { padding: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Agentforce Capstone · FDE R6</div>
+  <h1>🍽️ Aria — Diner Support Agent</h1>
+  <p>Interactive demo: conversation flows, component analysis, Agent Script breakdown, and execution model.</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" onclick="showTab('demo')">💬 Live Demo</button>
+  <button class="tab-btn" onclick="showTab('architecture')">🏗️ Architecture</button>
+  <button class="tab-btn" onclick="showTab('code')">📄 Agent Script</button>
+  <button class="tab-btn" onclick="showTab('variables')">📦 Variables</button>
+  <button class="tab-btn" onclick="showTab('apex')">⚡ Apex Actions</button>
+  <button class="tab-btn" onclick="showTab('execution')">⚙️ Execution Model</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════
+     TAB 1: LIVE DEMO
+══════════════════════════════════════════════ -->
+<div id="tab-demo" class="tab-panel active">
+  <h2 class="section-title">Conversation Flow Demo</h2>
+  <p style="margin-bottom:1.5rem;color:var(--muted);font-size:.9rem;">Select a scenario to replay a conversation flow. Each turn highlights which subagent is active and the current variable state.</p>
+
+  <div class="demo-layout">
+    <!-- LEFT: chat window -->
+    <div>
+      <div class="chat-window">
+        <div class="chat-header">
+          <div class="chat-avatar">🤖</div>
+          <div class="chat-header-info">
+            <h3>Aria</h3>
+            <span>The Diner AI Assistant</span>
+          </div>
+          <div class="online-dot"></div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="msg agent">
+            <div class="msg-label">Aria</div>
+            Hi! I'm Aria, The Diner's AI-powered assistant. I can help you find restaurants, answer questions about our dining options, or manage your reservation. How can I help you today?
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" id="chat-input" placeholder="Select a scenario above to replay..." readonly />
+          <button class="send-btn" id="send-btn" onclick="nextStep()">▶ Next</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: scenario picker + analysis -->
+    <div>
+      <h3 class="section-subtitle">Choose a scenario</h3>
+      <div class="scenario-btns" id="scenario-btns"></div>
+
+      <div class="analysis-panel" id="analysis-panel" style="display:none">
+        <h4>🔍 Current state</h4>
+        <div id="analysis-content"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 2: ARCHITECTURE
+══════════════════════════════════════════════ -->
+<div id="tab-architecture" class="tab-panel">
+  <h2 class="section-title">Hub-and-Spoke + Verification Gate</h2>
+
+  <div class="flow-diagram">
+    <div class="flow-row">
+      <div class="flow-node start">aria_router (hub)</div>
+    </div>
+    <div class="flow-row">
+      <span class="flow-arrow">↓</span>
+      <span class="flow-label">before_reasoning gates</span>
+    </div>
+    <div class="flow-row">
+      <div class="flow-node safe">faq</div>
+      <span class="flow-arrow">·</span>
+      <div class="flow-node safe">create_reservation</div>
+      <span class="flow-arrow">·</span>
+      <div class="flow-node auth">authentication_gate</div>
+      <span class="flow-arrow">·</span>
+      <div class="flow-node end">post_interaction</div>
+      <span class="flow-arrow">·</span>
+      <div class="flow-node warn">escalation</div>
+    </div>
+    <div class="flow-row">
+      <span style="width:280px"></span>
+      <span class="flow-arrow">↓</span>
+    </div>
+    <div class="flow-row">
+      <span style="width:280px"></span>
+      <div class="flow-node auth">auth_verify_code</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-node safe">reservation_hub</div>
+    </div>
+    <div class="flow-row">
+      <span style="width:400px"></span>
+      <span class="flow-arrow">↙</span>
+      <span class="flow-arrow">↘</span>
+    </div>
+    <div class="flow-row">
+      <span style="width:350px"></span>
+      <div class="flow-node">modify_reservation</div>
+      <span class="flow-arrow">·</span>
+      <div class="flow-node">cancel_reservation</div>
+    </div>
+  </div>
+
+  <div class="info-box">💡 Every conversation turn always starts at <code>aria_router</code>. Transitions (<code>@utils.transition to</code>) are one-way — the previous subagent does not resume. Multi-turn flows are maintained via state variables and <code>before_reasoning</code> gates.</div>
+
+  <h3 class="section-subtitle">Subagents</h3>
+  <div class="arch-grid" id="arch-grid"></div>
+
+  <h3 class="section-subtitle">Authentication design decision</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div class="analysis-panel">
+      <h4 style="color:var(--sf-green)">✅ New reservation</h4>
+      <p style="font-size:.85rem;margin-top:.5rem;">No authentication required. The customer provides their name and email at booking time. Goes directly to <code>create_reservation</code>.</p>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem;">Rationale: a new customer has no existing account to verify against. Requiring auth for a first booking creates unnecessary friction.</p>
+    </div>
+    <div class="analysis-panel">
+      <h4 style="color:var(--sf-orange)">🔐 Modify / Cancel</h4>
+      <p style="font-size:.85rem;margin-top:.5rem;">Requires OTP verification. The customer provides their email, receives a 6-digit code, and enters it before accessing reservation management.</p>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem;">Rationale: modifying or cancelling a reservation affects existing data tied to a specific contact — identity must be confirmed.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 3: AGENT SCRIPT CODE
+══════════════════════════════════════════════ -->
+<div id="tab-code" class="tab-panel">
+  <h2 class="section-title">Agent Script — Annotated Source</h2>
+  <p style="margin-bottom:1.5rem;color:var(--muted);font-size:.9rem;">Agent Script is Salesforce's DSL for the Atlas Reasoning Engine. It is NOT JavaScript or Python. Each block has a specific role in the two-phase execution model.</p>
+
+  <div class="code-tabs" id="code-tabs"></div>
+  <div class="code-block" id="code-block"><pre id="code-pre"></pre></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 4: VARIABLES
+══════════════════════════════════════════════ -->
+<div id="tab-variables" class="tab-panel">
+  <h2 class="section-title">Session Variables</h2>
+  <p style="margin-bottom:1.5rem;color:var(--muted);font-size:.9rem;">Variables persist across the entire conversation session. They are the agent's memory — subagents read and write them to share state.</p>
+
+  <div class="info-box">💡 <strong>Mutable variables</strong> have a default value and can be read and written by the agent. <strong>Linked variables</strong> are read-only — they are populated automatically from the messaging session context (e.g., the user's ContactId).</div>
+
+  <h3 class="section-subtitle">Authentication state</h3>
+  <div class="var-grid" id="var-auth"></div>
+
+  <h3 class="section-subtitle">OTP flow state</h3>
+  <div class="var-grid" id="var-otp"></div>
+
+  <h3 class="section-subtitle">Reservation state</h3>
+  <div class="var-grid" id="var-res"></div>
+
+  <h3 class="section-subtitle">DSAT survey state</h3>
+  <div class="var-grid" id="var-dsat"></div>
+
+  <h3 class="section-subtitle">Linked (read-only from session)</h3>
+  <div class="var-grid" id="var-linked"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 5: APEX ACTIONS
+══════════════════════════════════════════════ -->
+<div id="tab-apex" class="tab-panel">
+  <h2 class="section-title">Apex Actions</h2>
+  <p style="margin-bottom:1.5rem;color:var(--muted);font-size:.9rem;">Each action is an <code>@InvocableMethod</code> Apex class. The agent calls them via <code>target: "apex://ClassName"</code>. All use <code>Database.queryWithBinds</code> with <code>SYSTEM_MODE</code>.</p>
+
+  <div class="warn-box">⚠️ For the demo, the OTP code is fixed at <strong>123456</strong> in <code>VerifyOtpCode.cls</code>. Replace with a real email delivery mechanism for production.</div>
+
+  <div class="apex-grid" id="apex-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 6: EXECUTION MODEL
+══════════════════════════════════════════════ -->
+<div id="tab-execution" class="tab-panel">
+  <h2 class="section-title">Execution Model</h2>
+  <p style="margin-bottom:1.5rem;color:var(--muted);font-size:.9rem;">Understanding how Agent Script executes is critical for debugging routing issues and action invocation problems.</p>
+
+  <div class="phase-grid">
+    <div class="phase-card p1">
+      <h3>⚙️ Phase 1 — Deterministic Resolution</h3>
+      <ul>
+        <li>Evaluates <code>if / else</code> conditions top to bottom</li>
+        <li>Runs <code>run @actions.X</code> — calls Apex synchronously</li>
+        <li>Captures outputs with <code>set @variables.x = @outputs.y</code></li>
+        <li>Accumulates <code>| pipe text</code> into the LLM prompt</li>
+        <li>Applies <code>before_reasoning</code> and <code>after_reasoning</code> hooks</li>
+        <li>Transitions deterministically if conditions are met</li>
+      </ul>
+    </div>
+    <div class="phase-card p2">
+      <h3>🤖 Phase 2 — LLM Reasoning</h3>
+      <ul>
+        <li>Receives the fully resolved prompt from Phase 1</li>
+        <li>Sees the <code>reasoning.actions</code> toolset (filtered by <code>available when</code>)</li>
+        <li>Decides whether and which tools to call</li>
+        <li>Slot-fills <code>with param = ...</code> inputs from conversation context</li>
+        <li>Generates the final text response to the user</li>
+        <li>Grounding checker validates response against action output</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="section-subtitle">A single conversation turn — step by step</h3>
+  <div class="turn-flow" id="turn-flow"></div>
+
+  <h3 class="section-subtitle">Key patterns used in Aria</h3>
+  <div class="arch-grid" id="patterns-grid"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────
+
+const SUBAGENTS = [
+  { name: "aria_router", icon: "🔀", tags: ["hub", "start_agent"], desc: "Central entry point. Routes every user message to the correct subagent. Contains before_reasoning gates that intercept multi-turn flows (OTP auth, DSAT survey) before the LLM sees the message." },
+  { name: "faq", icon: "💬", tags: ["free", "apex"], desc: "Answers restaurant questions (hours, cuisine, location, dietary). Calls GetRestaurantDetails. No authentication required. Instructs the LLM to echo exact field values to prevent grounding failures." },
+  { name: "authentication_gate", icon: "📧", tags: ["auth", "apex"], desc: "Step 1 of OTP flow. Asks for the customer's email and immediately calls SendVerificationCode. Sets auth_in_progress = True via after_reasoning so the router redirects the next turn here." },
+  { name: "auth_verify_code", icon: "🔑", tags: ["auth", "apex"], desc: "Step 2 of OTP flow. Collects the 6-digit code and calls VerifyOtpCode. On success, sets customer_authenticated = True and transitions to reservation_hub." },
+  { name: "reservation_hub", icon: "📋", tags: ["auth"], desc: "Post-auth router. Welcomes the verified customer by name and routes to create, modify, or cancel. Has a defensive before_reasoning gate that bounces unauthenticated users back to authentication_gate." },
+  { name: "create_reservation", icon: "➕", tags: ["apex"], desc: "Creates a new booking. Collects restaurant, date/time, and party size. Calls CheckBookingAvailability then CreateBooking. Guest flow — does not require prior authentication." },
+  { name: "modify_reservation", icon: "✏️", tags: ["auth", "apex"], desc: "Modifies an existing booking. Requires authentication. Calls ModifyOrCancelBooking with action=MODIFY. Uses require_user_confirmation so the platform prompts before executing." },
+  { name: "cancel_reservation", icon: "❌", tags: ["auth", "apex"], desc: "Cancels an existing booking. Requires authentication. Calls ModifyOrCancelBooking with action=CANCEL. Also uses require_user_confirmation." },
+  { name: "post_interaction", icon: "⭐", tags: ["apex"], desc: "Collects a DSAT rating (1–5) and logs it via LogAgentInteraction using a deterministic run in instructions: ->. Uses the Post-Action Loop pattern: after_reasoning sets dsat_started = True so the router redirects subsequent turns here until the rating is logged." },
+  { name: "escalation", icon: "🧑‍💼", tags: ["apex"], desc: "Creates a Service Cloud Case via CreateServiceCase, then transfers to a human agent via @utils.escalate. The connection messaging: block defines the escalation route." },
+  { name: "ambiguous_question", icon: "❓", tags: ["free"], desc: "Handles unclear requests by asking for clarification. No actions — just a clarifying prompt and a go_back transition." },
+  { name: "off_topic", icon: "🚫", tags: ["free"], desc: "Politely declines out-of-scope requests and redirects to what Aria can help with." },
+];
+
+const VARIABLES = {
+  auth: [
+    { name: "customer_authenticated", type: "mutable boolean", default: "False", desc: "True after OTP is verified. Gates access to reservation_hub, modify_reservation, and cancel_reservation." },
+    { name: "customer_email", type: "mutable string", default: '""', desc: "Email collected during authentication. Passed to SendVerificationCode and VerifyOtpCode." },
+    { name: "customer_contact_id", type: "mutable string", default: '""', desc: "Salesforce Contact Id returned by VerifyOtpCode after successful verification." },
+    { name: "customer_name", type: "mutable string", default: '""', desc: "Full name of the verified customer. Used in reservation_hub welcome message." },
+  ],
+  otp: [
+    { name: "auth_in_progress", type: "mutable boolean", default: "False", desc: "Set to True by authentication_gate's after_reasoning. Causes aria_router to redirect to authentication_gate on subsequent turns." },
+    { name: "otp_sent", type: "mutable boolean", default: "False", desc: "Set to True when SendVerificationCode returns sent=True. Causes aria_router to redirect to auth_verify_code." },
+    { name: "otp_code", type: "mutable string", default: '""', desc: "6-digit code entered by the customer. Passed to VerifyOtpCode." },
+    { name: "otp_contact_found", type: "mutable boolean", default: "False", desc: "True when SendVerificationCode finds a Contact for the given email." },
+    { name: "otp_send_message", type: "mutable string", default: '""', desc: "Message returned by SendVerificationCode to display to the customer." },
+  ],
+  res: [
+    { name: "booking_number", type: "mutable string", default: '""', desc: "Confirmation number (BKG-XXXX) from the most recent CreateBooking or ModifyOrCancelBooking call." },
+    { name: "restaurant_id", type: "mutable string", default: '""', desc: "Salesforce Id of the restaurant selected by the customer." },
+    { name: "customer_booking_number", type: "mutable string", default: '""', desc: "Booking number provided by the customer (legacy field from the original auth flow)." },
+    { name: "escalation_reason", type: "mutable string", default: '""', desc: "Reason captured before escalation. Passed to CreateServiceCase." },
+  ],
+  dsat: [
+    { name: "dsat_started", type: "mutable boolean", default: "False", desc: "Set to True by post_interaction's after_reasoning after the first survey turn. Causes aria_router to redirect here until the rating is collected." },
+    { name: "dsat_score", type: "mutable string", default: '""', desc: "1–5 rating provided by the customer. Triggers the deterministic run @actions.log_interaction in instructions: ->." },
+    { name: "dsat_collected", type: "mutable boolean", default: "False", desc: "Set to True when LogAgentInteraction succeeds. Stops the router redirect and allows the goodbye." },
+  ],
+  linked: [
+    { name: "EndUserId", type: "linked string", default: "from session", desc: "MessagingSession.MessagingEndUserId — identifies the end user in the messaging channel." },
+    { name: "RoutableId", type: "linked string", default: "from session", desc: "MessagingSession.Id — used for routing and escalation." },
+    { name: "ContactId", type: "linked string", default: "from session", desc: "MessagingEndUser.ContactId — pre-populated if the user is a known contact." },
+    { name: "EndUserLanguage", type: "linked string", default: "from session", desc: "Messaging session language code. Used to ensure the agent responds in the correct language." },
+  ],
+};
+
+const APEX_ACTIONS = [
+  { name: "GetRestaurantDetails", badge: "", desc: "Looks up a restaurant by name (LIKE) or Salesforce Id and returns its profile.", inputs: [["restaurantIdOrName","string","required"]], outputs: [["found","boolean"],["restaurantId","string"],["restaurantName","string"],["cuisineType","string"],["location","string"],["openingHours","string"],["dietaryOptions","string"],["phone","string"],["summary","string"]] },
+  { name: "CheckBookingAvailability", badge: "", desc: "Checks if a restaurant has availability for a given date, time, and party size.", inputs: [["restaurantId","string","required"],["requestedDateTime","datetime","required"],["partySize","integer","required"]], outputs: [["isAvailable","boolean"],["message","string"],["availableSlots","string"]] },
+  { name: "CreateBooking", badge: "", desc: "Creates a Booking__c record with Status = Confirmed and returns the booking number.", inputs: [["restaurantName","string","required"],["bookingDateTime","datetime","required"],["partySize","integer","required"],["customerName","string","required"],["specialRequests","string",""]], outputs: [["success","boolean"],["message","string"],["bookingNumber","string"]] },
+  { name: "ModifyOrCancelBooking", badge: "", desc: "Modifies or cancels an existing booking. The action parameter controls the operation (MODIFY or CANCEL).", inputs: [["bookingId","string","required"],["action","string","required"],["newDateTime","datetime",""],["newPartySize","integer",""]], outputs: [["success","boolean"],["message","string"],["bookingNumber","string"],["newStatus","string"]] },
+  { name: "SendVerificationCode", badge: "new", desc: "Checks if a Contact exists for the given email and 'sends' a 6-digit OTP. Returns emailUsed so the agent can capture the email from the slot-filled input.", inputs: [["email","string","required"]], outputs: [["sent","boolean"],["contactFound","boolean"],["message","string"],["emailUsed","string"]] },
+  { name: "VerifyOtpCode", badge: "new", desc: "Validates the 6-digit code against the demo value (123456). Returns the Contact on success. Returns an error message on failure.", inputs: [["email","string","required"],["code","string","required"]], outputs: [["verified","boolean"],["contactId","string"],["contactName","string"],["errorMessage","string"]] },
+  { name: "LogAgentInteraction", badge: "", desc: "Creates an Agent_Interaction__c record with the DSAT score, interaction type, and optional notes. Called deterministically via run.", inputs: [["contactId","string",""],["bookingNumber","string",""],["dsatScore","string","required"],["interactionType","string","required"],["notes","string",""]], outputs: [["success","boolean"],["interactionId","string"],["message","string"]] },
+  { name: "CreateServiceCase", badge: "", desc: "Creates a Service Cloud Case with Origin = 'Agentforce' and Status = 'New'. Returns the case number for the agent to include in its response.", inputs: [["contactId","string",""],["reason","string","required"],["description","string","required"]], outputs: [["success","boolean"],["caseNumber","string"],["errorMessage","string"]] },
+  { name: "InitDsatSurvey", badge: "new", desc: "Minimal stub — returns started = True. Originally created to set the dsat_started flag via a run action; now replaced by after_reasoning: set.", inputs: [["dummy","string",""]], outputs: [["started","boolean"]] },
+];
+
+const CODE_SNIPPETS = {
+  "router + gates": `<span class="cm">// The central hub — every turn starts here</span>
+<span class="kw">start_agent</span> <span class="ac">aria_router</span>:
+    <span class="vr">description</span>: <span class="st">"Main entry point. Routes intent to the right subagent."</span>
+
+    <span class="cm">// Deterministic gates — run BEFORE the LLM sees anything</span>
+    <span class="kw">before_reasoning</span>:
+        <span class="cm">// OTP sent but not yet verified → force code entry</span>
+        <span class="kw">if</span> <span class="vr">@variables.otp_sent</span> == <span class="kw">True</span> <span class="kw">and</span> <span class="vr">@variables.customer_authenticated</span> == <span class="kw">False</span>:
+            <span class="kw">transition to</span> <span class="ac">@subagent.auth_verify_code</span>
+        <span class="cm">// Auth started but OTP not sent yet → ask for email</span>
+        <span class="kw">if</span> <span class="vr">@variables.auth_in_progress</span> == <span class="kw">True</span> <span class="kw">and</span> <span class="vr">@variables.otp_sent</span> == <span class="kw">False</span>:
+            <span class="kw">transition to</span> <span class="ac">@subagent.authentication_gate</span>
+        <span class="cm">// DSAT survey in progress → collect rating</span>
+        <span class="kw">if</span> <span class="vr">@variables.dsat_started</span> == <span class="kw">True</span> <span class="kw">and</span> <span class="vr">@variables.dsat_collected</span> == <span class="kw">False</span>:
+            <span class="kw">transition to</span> <span class="ac">@subagent.post_interaction</span>
+
+    <span class="kw">reasoning</span>:
+        <span class="kw">instructions</span>: ->
+            | Understand intent and route. Do NOT answer directly.
+            | New reservation → create_reservation (no auth needed).
+            | Modify/cancel → authentication_gate if not verified.
+
+        <span class="kw">actions</span>:
+            <span class="ac">go_to_faq</span>: <span class="kw">@utils.transition to</span> <span class="ac">@subagent.faq</span>
+                <span class="vr">description</span>: <span class="st">"Browse restaurants or ask dining questions"</span>
+            <span class="ac">go_to_create</span>: <span class="kw">@utils.transition to</span> <span class="ac">@subagent.create_reservation</span>
+                <span class="vr">description</span>: <span class="st">"Make a NEW reservation — no auth required"</span>
+            <span class="ac">go_to_auth</span>: <span class="kw">@utils.transition to</span> <span class="ac">@subagent.authentication_gate</span>
+                <span class="vr">description</span>: <span class="st">"Modify or cancel — not yet verified"</span>
+                <span class="kw">available when</span> <span class="vr">@variables.customer_authenticated</span> == <span class="kw">False</span>
+            <span class="ac">go_to_modify_cancel</span>: <span class="kw">@utils.transition to</span> <span class="ac">@subagent.reservation_hub</span>
+                <span class="vr">description</span>: <span class="st">"Modify or cancel — already verified"</span>
+                <span class="kw">available when</span> <span class="vr">@variables.customer_authenticated</span> == <span class="kw">True</span>`,
+
+  "OTP auth gate": `<span class="cm">// Step 1: collect email + send code in one turn</span>
+<span class="kw">subagent</span> <span class="ac">authentication_gate</span>:
+    <span class="vr">description</span>: <span class="st">"Asks for email and sends a 6-digit OTP."</span>
+    <span class="kw">reasoning</span>:
+        <span class="kw">instructions</span>: ->
+            | Ask for the customer's email and use {!@actions.send_code}
+            | to send a verification code immediately.
+            | Show the message returned. If no account found, offer escalation.
+
+        <span class="kw">actions</span>:
+            <span class="cm">// No available when — needed as entry point, gate removed</span>
+            <span class="ac">send_code</span>: <span class="kw">@actions.send_code</span>
+                <span class="vr">description</span>: <span class="st">"Ask for email and send a 6-digit OTP. Call once."</span>
+                <span class="kw">with</span> email = <span class="cm">...</span>             <span class="cm">// LLM slot-fills from conversation</span>
+                <span class="kw">set</span> <span class="vr">@variables.customer_email</span> = <span class="vr">@outputs.emailUsed</span>
+                <span class="kw">set</span> <span class="vr">@variables.otp_sent</span>       = <span class="vr">@outputs.sent</span>
+                <span class="kw">set</span> <span class="vr">@variables.otp_send_message</span> = <span class="vr">@outputs.message</span>
+            <span class="ac">go_to_escalation</span>: <span class="kw">@utils.transition to</span> <span class="ac">@subagent.escalation</span>
+                <span class="vr">description</span>: <span class="st">"No account found or customer prefers human"</span>
+
+    <span class="cm">// after_reasoning runs AFTER the LLM — sets the flag</span>
+    <span class="kw">after_reasoning</span>:
+        <span class="kw">set</span> <span class="vr">@variables.auth_in_progress</span> = <span class="kw">True</span>
+
+<span class="cm">// Step 2: verify the code (separate subagent = separate turn)</span>
+<span class="kw">subagent</span> <span class="ac">auth_verify_code</span>:
+    <span class="vr">description</span>: <span class="st">"Collects and verifies the 6-digit OTP."</span>
+    <span class="kw">reasoning</span>:
+        <span class="kw">instructions</span>: ->
+            | A code was sent to {!@variables.customer_email}.
+            | Use {!@actions.collect_code} then {!@actions.verify_code}.
+
+        <span class="kw">actions</span>:
+            <span class="ac">collect_code</span>: <span class="kw">@utils.setVariables</span>
+                <span class="kw">with</span> otp_code = <span class="cm">...</span>
+                <span class="kw">available when</span> <span class="vr">@variables.otp_code</span> == <span class="st">""</span>
+            <span class="ac">verify_code</span>: <span class="kw">@actions.verify_code</span>
+                <span class="kw">with</span> email = <span class="vr">@variables.customer_email</span>
+                <span class="kw">with</span> code  = <span class="vr">@variables.otp_code</span>
+                <span class="kw">set</span> <span class="vr">@variables.customer_authenticated</span> = <span class="vr">@outputs.verified</span>
+                <span class="kw">set</span> <span class="vr">@variables.customer_contact_id</span>    = <span class="vr">@outputs.contactId</span>
+                <span class="kw">set</span> <span class="vr">@variables.customer_name</span>          = <span class="vr">@outputs.contactName</span>
+                <span class="kw">available when</span> <span class="vr">@variables.otp_code</span> != <span class="st">""</span>
+            <span class="ac">go_to_reservations</span>: <span class="kw">@utils.transition to</span> <span class="ac">@subagent.reservation_hub</span>
+                <span class="kw">available when</span> <span class="vr">@variables.customer_authenticated</span> == <span class="kw">True</span>`,
+
+  "DSAT survey": `<span class="cm">// Post-Action Loop pattern — run fires deterministically in Phase 1</span>
+<span class="kw">subagent</span> <span class="ac">post_interaction</span>:
+    <span class="vr">description</span>: <span class="st">"Collects DSAT rating and logs it to Salesforce."</span>
+    <span class="kw">reasoning</span>:
+        <span class="kw">instructions</span>: ->
+            <span class="cm">// POST-ACTION CHECK at top — triggers on re-entry after score is set</span>
+            <span class="kw">if</span> <span class="vr">@variables.dsat_score</span> != <span class="st">""</span> <span class="kw">and</span> <span class="vr">@variables.dsat_collected</span> == <span class="kw">False</span>:
+                <span class="cm">// Deterministic — runs in Phase 1, no LLM decision needed</span>
+                <span class="kw">run</span> <span class="ac">@actions.log_interaction</span>
+                    <span class="kw">with</span> contactId      = <span class="vr">@variables.customer_contact_id</span>
+                    <span class="kw">with</span> bookingNumber  = <span class="vr">@variables.booking_number</span>
+                    <span class="kw">with</span> dsatScore      = <span class="vr">@variables.dsat_score</span>
+                    <span class="kw">with</span> interactionType = <span class="st">"GENERAL"</span>
+                    <span class="kw">with</span> notes          = <span class="st">""</span>
+                    <span class="kw">set</span> <span class="vr">@variables.dsat_collected</span> = <span class="vr">@outputs.success</span>
+
+            <span class="kw">if</span> <span class="vr">@variables.dsat_collected</span> == <span class="kw">True</span>:
+                | Thank you for your feedback! Goodbye!
+
+            <span class="kw">if</span> <span class="vr">@variables.dsat_started</span> == <span class="kw">True</span> <span class="kw">and</span> <span class="vr">@variables.dsat_score</span> == <span class="st">""</span>:
+                | Please reply with a number from 1 to 5.
+
+            <span class="kw">if</span> <span class="vr">@variables.dsat_started</span> == <span class="kw">False</span>:
+                | Please rate your experience: 1 (very dissatisfied) to 5 (very satisfied).
+
+        <span class="kw">actions</span>:
+            <span class="ac">collect_score</span>: <span class="kw">@utils.setVariables</span>
+                <span class="vr">description</span>: <span class="st">"Record the rating 1–5"</span>
+                <span class="kw">with</span> dsat_score = <span class="cm">...</span>
+                <span class="kw">available when</span> <span class="vr">@variables.dsat_score</span> == <span class="st">""</span>
+
+    <span class="cm">// Sets flag so router redirects here on the NEXT turn</span>
+    <span class="kw">after_reasoning</span>:
+        <span class="kw">set</span> <span class="vr">@variables.dsat_started</span> = <span class="kw">True</span>`,
+
+  "variables block": `<span class="cm">// Session state — persists across the entire conversation</span>
+<span class="kw">variables</span>:
+    <span class="cm">// ── Authentication ──</span>
+    <span class="vr">customer_authenticated</span>: <span class="kw">mutable boolean</span> = <span class="kw">False</span>
+        <span class="vr">description</span>: <span class="st">"True after OTP is verified"</span>
+    <span class="vr">customer_email</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+    <span class="vr">customer_contact_id</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+    <span class="vr">customer_name</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+
+    <span class="cm">// ── OTP flow ──</span>
+    <span class="vr">auth_in_progress</span>: <span class="kw">mutable boolean</span> = <span class="kw">False</span>
+    <span class="vr">otp_sent</span>: <span class="kw">mutable boolean</span> = <span class="kw">False</span>
+    <span class="vr">otp_code</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+    <span class="vr">otp_contact_found</span>: <span class="kw">mutable boolean</span> = <span class="kw">False</span>
+    <span class="vr">otp_send_message</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+
+    <span class="cm">// ── Reservation ──</span>
+    <span class="vr">booking_number</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+    <span class="vr">restaurant_id</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+    <span class="vr">escalation_reason</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+
+    <span class="cm">// ── DSAT ──</span>
+    <span class="vr">dsat_started</span>: <span class="kw">mutable boolean</span> = <span class="kw">False</span>
+    <span class="vr">dsat_score</span>: <span class="kw">mutable string</span> = <span class="st">""</span>
+    <span class="vr">dsat_collected</span>: <span class="kw">mutable boolean</span> = <span class="kw">False</span>
+
+    <span class="cm">// ── Linked (read-only from messaging session) ──</span>
+    <span class="vr">EndUserId</span>: <span class="kw">linked string</span>
+        <span class="kw">source</span>: @MessagingSession.MessagingEndUserId
+    <span class="vr">ContactId</span>: <span class="kw">linked string</span>
+        <span class="kw">source</span>: @MessagingEndUser.ContactId`,
+};
+
+const SCENARIOS = [
+  {
+    id: "faq",
+    icon: "💬",
+    label: "Restaurant FAQ",
+    steps: [
+      { from: "user",  text: "Tell me about La Bella Italia",   subagent: "aria_router → faq",   vars: {customer_authenticated:"False",otp_sent:"False",dsat_started:"False"}, note: "Router recognises FAQ intent → transitions to faq subagent" },
+      { from: "agent", text: "La Bella Italia is an authentic Italian restaurant located at 123 Main Street. Open Mon–Sat 11am–10pm. Cuisine: Italian. Dietary options: Vegetarian, Gluten-Free. Phone: +1 555-0101. A classic dining experience in the heart of the city.", subagent: "faq", vars: {restaurant_id:"a01WC000..."}, note: "faq calls GetRestaurantDetails → LLM echoes exact field values to pass grounding check" },
+      { from: "user",  text: "And Sakura Garden?",             subagent: "faq",                   vars: {}, note: "Still in faq — no transition needed" },
+      { from: "agent", text: "Sakura Garden is a Japanese restaurant on 456 Cherry Lane. Open daily 12pm–11pm. Cuisine: Japanese. Offers Vegan and Gluten-Free options. Phone: +1 555-0202.", subagent: "faq", vars: {restaurant_id:"a01WC000..."}, note: "" },
+    ]
+  },
+  {
+    id: "new-booking",
+    icon: "➕",
+    label: "New reservation (guest)",
+    steps: [
+      { from: "user",  text: "I'd like to book a table",        subagent: "aria_router → create_reservation", vars: {customer_authenticated:"False"}, note: "Router routes to create_reservation directly — no auth needed for new bookings" },
+      { from: "agent", text: "I'd be happy to help you make a reservation! Which restaurant would you like, and what date, time, and party size?", subagent: "create_reservation", vars: {}, note: "" },
+      { from: "user",  text: "El Rancho, 2 people, July 25 at 7pm", subagent: "create_reservation", vars: {}, note: "LLM slot-fills restaurantName, bookingDateTime, partySize from this message" },
+      { from: "agent", text: "Booking confirmed at El Rancho! Your booking number is BKG-0011. Party of 2 on July 25, 2026 at 7:00 PM.", subagent: "create_reservation", vars: {booking_number:"BKG-0011"}, note: "CreateBooking Apex creates the Booking__c record. bookingNumber set via set @variables.booking_number = @outputs.bookingNumber" },
+    ]
+  },
+  {
+    id: "otp-auth",
+    icon: "🔐",
+    label: "OTP auth + modify",
+    steps: [
+      { from: "user",  text: "I want to modify my reservation", subagent: "aria_router → authentication_gate", vars: {customer_authenticated:"False", auth_in_progress:"False"}, note: "Router detects modify intent + not authenticated → transitions to authentication_gate" },
+      { from: "agent", text: "To access your reservations, I need to verify your identity. Please provide your email address and I'll send you a verification code.", subagent: "authentication_gate", vars: {auth_in_progress:"True"}, note: "after_reasoning sets auth_in_progress = True. Next turn the router will redirect here." },
+      { from: "user",  text: "john.smith@example.com",         subagent: "aria_router → authentication_gate", vars: {auth_in_progress:"True", otp_sent:"False"}, note: "before_reasoning gate fires: auth_in_progress=True and otp_sent=False → redirect to authentication_gate" },
+      { from: "agent", text: "A 6-digit verification code has been sent to john.smith@example.com. Please check your inbox and enter the code.", subagent: "authentication_gate", vars: {otp_sent:"True", customer_email:"john.smith@example.com"}, note: "send_code action calls SendVerificationCode Apex → otp_sent = True. Next turn router redirects to auth_verify_code." },
+      { from: "user",  text: "123456",                         subagent: "aria_router → auth_verify_code", vars: {otp_sent:"True", customer_authenticated:"False"}, note: "before_reasoning gate: otp_sent=True and not authenticated → redirect to auth_verify_code" },
+      { from: "agent", text: "Identity verified! Welcome, John Smith. What would you like to do with your reservation — modify or cancel?", subagent: "auth_verify_code → reservation_hub", vars: {customer_authenticated:"True", customer_name:"John Smith", customer_contact_id:"003WC..."}, note: "VerifyOtpCode validates code → customer_authenticated = True → go_to_reservations transition fires" },
+      { from: "user",  text: "Change BKG-0010 to July 28 at 8pm for 4 people", subagent: "reservation_hub → modify_reservation", vars: {}, note: "reservation_hub routes to modify_reservation" },
+      { from: "agent", text: "Your reservation BKG-0010 has been updated to July 28, 2026 at 8:00 PM for 4 guests. Status: Confirmed.", subagent: "modify_reservation", vars: {booking_number:"BKG-0010"}, note: "ModifyOrCancelBooking called with action=MODIFY" },
+    ]
+  },
+  {
+    id: "dsat",
+    icon: "⭐",
+    label: "DSAT survey",
+    steps: [
+      { from: "user",  text: "I'm done, thanks",               subagent: "aria_router → post_interaction", vars: {dsat_started:"False"}, note: "Router recognises end-of-session intent → transitions to post_interaction" },
+      { from: "agent", text: "Thank you for using The Diner assistant! Please rate your experience on a scale of 1 to 5 stars: 1 - Very dissatisfied, 5 - Very satisfied.", subagent: "post_interaction", vars: {dsat_started:"True"}, note: "after_reasoning sets dsat_started = True. Next turn router will redirect here." },
+      { from: "user",  text: "4",                              subagent: "aria_router → post_interaction", vars: {dsat_started:"True", dsat_score:""}, note: "before_reasoning: dsat_started=True and not collected → redirect to post_interaction. collect_score action sets dsat_score = '4'." },
+      { from: "agent", text: "Thank you for your feedback! It was a pleasure assisting you today. Have a wonderful dining experience. Goodbye!", subagent: "post_interaction", vars: {dsat_score:"4", dsat_collected:"True"}, note: "Phase 1: run @actions.log_interaction fires deterministically → creates Agent_Interaction__c record → dsat_collected = True" },
+    ]
+  },
+  {
+    id: "escalation",
+    icon: "🧑‍💼",
+    label: "Escalation",
+    steps: [
+      { from: "user",  text: "I need to speak with a human",   subagent: "aria_router → escalation", vars: {}, note: "Router detects escalation intent → go_to_escalation transition" },
+      { from: "agent", text: "Of course! Let me document your request and connect you with a team member. Could you briefly describe what you need help with?", subagent: "escalation", vars: {}, note: "" },
+      { from: "user",  text: "I have a billing issue with my last reservation", subagent: "escalation", vars: {}, note: "LLM slot-fills description for CreateServiceCase" },
+      { from: "agent", text: "I've created support case #00001012 for your billing inquiry. Let me connect you with a team member now.", subagent: "escalation", vars: {}, note: "create_case action calls CreateServiceCase → returns caseNumber. Then connect_to_human calls @utils.escalate to transfer the session." },
+    ]
+  },
+];
+
+const PATTERNS = [
+  { icon: "🔀", name: "Hub-and-Spoke", tag: "architecture", desc: "start_agent as the central router. Each subagent handles one responsibility and transitions back. Keeps the LLM focused — no subagent sees instructions meant for another." },
+  { icon: "🔐", name: "Verification Gate", tag: "architecture", desc: "before_reasoning blocks on protected subagents redirect unauthenticated users. Combined with state flags and router gates to maintain the auth state across turns." },
+  { icon: "🔄", name: "Post-Action Loop", tag: "determinism", desc: "run @actions.X at the TOP of instructions: -> fires deterministically in Phase 1. Used for the DSAT log_interaction — ensures the Apex call happens regardless of LLM behaviour." },
+  { icon: "🚦", name: "State Flag Redirect", tag: "multi-turn", desc: "after_reasoning: set @variables.flag = True combined with before_reasoning gates in the router. Keeps multi-turn flows (auth, DSAT) intact across turns without relying on the LLM to remember context." },
+];
+
+// ─────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────
+
+function showTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// --- Architecture ---
+function renderArch() {
+  const g = document.getElementById('arch-grid');
+  g.innerHTML = SUBAGENTS.map(s => `
+    <div class="arch-card">
+      <h3>${s.icon} ${s.name}</h3>
+      <p>${s.desc}</p>
+      <div style="margin-top:.6rem">
+        ${s.tags.map(t => `<span class="tag ${t}">${t}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// --- Code ---
+const codeKeys = Object.keys(CODE_SNIPPETS);
+function renderCode() {
+  const tabs = document.getElementById('code-tabs');
+  tabs.innerHTML = codeKeys.map((k,i) => `
+    <button class="code-tab-btn${i===0?' active':''}" onclick="switchCode(this,'${k}')">${k}</button>`).join('');
+  document.getElementById('code-pre').innerHTML = CODE_SNIPPETS[codeKeys[0]];
+}
+function switchCode(btn, key) {
+  document.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('code-pre').innerHTML = CODE_SNIPPETS[key];
+}
+
+// --- Variables ---
+function renderVarSection(id, items) {
+  document.getElementById(id).innerHTML = items.map(v => `
+    <div class="var-card">
+      <div class="var-name">${v.name}</div>
+      <div class="var-type">${v.type}</div>
+      <div class="var-desc">${v.desc}</div>
+      <div class="var-default">= ${v.default}</div>
+    </div>`).join('');
+}
+
+// --- Apex ---
+function renderApex() {
+  document.getElementById('apex-grid').innerHTML = APEX_ACTIONS.map(a => `
+    <div class="apex-card">
+      <h3>${a.name} ${a.badge ? `<span class="chip chip-new">${a.badge}</span>` : ''}</h3>
+      <div class="desc">${a.desc}</div>
+      <div class="io-label">Inputs</div>
+      ${a.inputs.map(i => `<div class="io-item"><span class="io-type">${i[1]}</span> ${i[0]} ${i[2]==='required'?'<span class="chip chip-in">required</span>':''}</div>`).join('')}
+      <div class="io-label" style="margin-top:.5rem">Outputs</div>
+      ${a.outputs.map(o => `<div class="io-item"><span class="io-type">${o[1]}</span> ${o[0]}</div>`).join('')}
+    </div>`).join('');
+}
+
+// --- Execution model ---
+function renderExecution() {
+  const steps = [
+    { n:1, title:"User message arrives", body:"The platform receives the user's text and starts a new turn. Variables from the previous turn are preserved in session state." },
+    { n:2, title:"before_reasoning runs (if defined)", body:"Deterministic checks fire. If a transition is triggered here (e.g., auth gate), the target subagent takes over immediately — the LLM never sees the original subagent's instructions." },
+    { n:3, title:"Phase 1 — instructions: -> resolved", body:"The runtime evaluates if/else top to bottom, runs any run @actions.X calls, sets variables, and accumulates | pipe lines into the prompt string." },
+    { n:4, title:"available when evaluated", body:"The platform checks each reasoning action's available when condition. Actions that don't pass are hidden from the LLM's toolset entirely." },
+    { n:5, title:"Phase 2 — LLM reasoning", body:"The LLM receives the resolved prompt and the visible toolset. It decides which (if any) actions to call, slot-fills ... inputs from conversation history, and generates the response text." },
+    { n:6, title:"Grounding check", body:"The platform validates the LLM's response against real action output data. If ungrounded, the LLM gets one retry. Two consecutive failures return the system error message." },
+    { n:7, title:"after_reasoning runs (if defined)", body:"Deterministic post-processing. Only set and transition to are reliable here. Used for state flags like dsat_started = True and auth_in_progress = True." },
+    { n:8, title:"Response delivered", body:"The final response reaches the user. Variables updated this turn are available for the next turn's before_reasoning evaluation." },
+  ];
+  document.getElementById('turn-flow').innerHTML = steps.map(s => `
+    <div class="turn-step">
+      <div class="turn-num">${s.n}</div>
+      <div class="turn-step-content">
+        <h4>${s.title}</h4>
+        <p>${s.body}</p>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('patterns-grid').innerHTML = PATTERNS.map(p => `
+    <div class="arch-card">
+      <h3>${p.icon} ${p.name} <span class="tag">${p.tag}</span></h3>
+      <p>${p.desc}</p>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────────
+// DEMO
+// ─────────────────────────────────────────────────
+let activeScenario = null;
+let stepIndex = 0;
+
+function renderScenarioBtns() {
+  document.getElementById('scenario-btns').innerHTML = SCENARIOS.map(s => `
+    <button class="scenario-btn" id="sbtn-${s.id}" onclick="selectScenario('${s.id}')">
+      <span class="icon">${s.icon}</span> ${s.label}
+    </button>`).join('');
+}
+
+function selectScenario(id) {
+  activeScenario = SCENARIOS.find(s => s.id === id);
+  stepIndex = 0;
+  document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sbtn-' + id).classList.add('active');
+  // reset chat
+  document.getElementById('chat-messages').innerHTML = `
+    <div class="msg agent">
+      <div class="msg-label">Aria</div>
+      Hi! I'm Aria, The Diner's AI-powered assistant. I can help you find restaurants, answer questions about our dining options, or manage your reservation. How can I help you today?
+    </div>`;
+  document.getElementById('analysis-panel').style.display = 'none';
+  document.getElementById('chat-input').value = 'Click "▶ Next" to replay step by step...';
+  document.getElementById('send-btn').textContent = '▶ Next';
+}
+
+function nextStep() {
+  if (!activeScenario) return;
+  if (stepIndex >= activeScenario.steps.length) {
+    document.getElementById('send-btn').textContent = '↺ Restart';
+    document.getElementById('chat-input').value = 'Scenario complete.';
+    if (stepIndex > activeScenario.steps.length) { selectScenario(activeScenario.id); }
+    stepIndex++;
+    return;
+  }
+  const step = activeScenario.steps[stepIndex];
+  const msgs = document.getElementById('chat-messages');
+
+  // Add message
+  const div = document.createElement('div');
+  div.className = `msg ${step.from}`;
+  if (step.from === 'agent') div.innerHTML = `<div class="msg-label">Aria</div>${step.text}`;
+  else div.innerHTML = `<div class="msg-label">You</div>${step.text}`;
+  msgs.appendChild(div);
+
+  // Add note
+  if (step.note) {
+    const note = document.createElement('div');
+    note.className = 'msg system-note';
+    note.textContent = '⚙️ ' + step.note;
+    msgs.appendChild(note);
+  }
+
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Show analysis
+  const panel = document.getElementById('analysis-panel');
+  panel.style.display = 'block';
+  const changed = Object.keys(step.vars);
+  document.getElementById('analysis-content').innerHTML = `
+    <div style="margin-bottom:.6rem">
+      <span class="subagent-badge">📍 ${step.subagent}</span>
+    </div>
+    ${changed.length > 0 ? `
+    <table class="var-table">
+      <thead><tr><th>Variable</th><th>Value this turn</th></tr></thead>
+      <tbody>
+        ${changed.map(k => `<tr><td>${k}</td><td class="${step.vars[k]==='True'?'var-true':step.vars[k]==='False'?'var-false':'var-set'}">${step.vars[k]}</td></tr>`).join('')}
+      </tbody>
+    </table>` : '<p style="font-size:.8rem;color:var(--muted)">No variable changes this turn.</p>'}
+  `;
+
+  document.getElementById('chat-input').value = stepIndex + 1 < activeScenario.steps.length
+    ? `Next: ${activeScenario.steps[stepIndex+1].from === 'user' ? '👤 ' : '🤖 '}"${activeScenario.steps[stepIndex+1].text.slice(0,40)}..."`
+    : 'Scenario complete.';
+
+  stepIndex++;
+}
+
+// ─────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────
+renderArch();
+renderCode();
+renderVarSection('var-auth',   VARIABLES.auth);
+renderVarSection('var-otp',    VARIABLES.otp);
+renderVarSection('var-res',    VARIABLES.res);
+renderVarSection('var-dsat',   VARIABLES.dsat);
+renderVarSection('var-linked', VARIABLES.linked);
+renderApex();
+renderExecution();
+renderScenarioBtns();
+</script>
+</body>
+</html>
