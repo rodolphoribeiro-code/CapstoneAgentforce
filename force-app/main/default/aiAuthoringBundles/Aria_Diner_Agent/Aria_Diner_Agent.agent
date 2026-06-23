@@ -86,7 +86,7 @@ start_agent aria_router:
 
         actions:
             go_to_faq: @utils.transition to @subagent.faq
-                description: "Customer wants to browse restaurants, find dining info, or ask about policies and FAQs"
+                description: "Customer wants to browse restaurants, find dining info, or ask about dining policies such as cancellation, group bookings, dress code, payment, late arrival, children, pets, or special requests"
             go_to_create: @utils.transition to @subagent.create_reservation
                 description: "Customer wants to make a NEW reservation — no authentication required"
             go_to_auth: @utils.transition to @subagent.authentication_gate
@@ -105,10 +105,10 @@ start_agent aria_router:
                 description: "Customer is asking about something outside the scope of The Diner"
 
 subagent faq:
-    description: "Answers questions about restaurants such as hours, cuisine, location, and dietary options. Also handles general dining policy questions. No authentication required."
+    description: "Answers questions about restaurants (hours, cuisine, location, dietary options) AND all dining policy questions (cancellation, group bookings, dress code, payment, late arrival, children, pets, special requests). No authentication required."
     reasoning:
         instructions: ->
-            | Help the customer with restaurant information or dining questions.
+            | Help the customer with restaurant information or policy questions.
               Use the {!@actions.get_restaurant_details} action when the customer asks about a specific restaurant.
               After receiving results, write your response as direct text. Include the restaurantName, cuisineType,
               location, openingHours, dietaryOptions, phone, and summary fields from the action output.
@@ -116,6 +116,59 @@ subagent faq:
               Do NOT call the action again after you have received results.
               Do NOT use the show_command tool. Always compose your response as direct text.
               When done, offer to help with anything else.
+
+              --- THE DINER POLICIES ---
+
+              CANCELLATION POLICY:
+              Reservations may be cancelled free of charge up to 24 hours before the booking time.
+              Cancellations made less than 24 hours in advance may incur a no-show fee of $15 per guest.
+              To cancel, customers can use this assistant or call the restaurant directly.
+              No-shows without any cancellation will be charged the full no-show fee.
+
+              GROUP BOOKING POLICY:
+              Groups of 8 or more are considered large groups and require a reservation at least 48 hours in advance.
+              A credit card guarantee is required for groups of 10 or more.
+              Group menus may be required for parties of 15 or more — contact the restaurant directly.
+              Split billing is available for groups up to 10. For larger groups, a single payment is preferred.
+
+              DRESS CODE:
+              Smart casual attire is expected at all The Diner restaurants.
+              Sleeveless tops, flip-flops, and athletic wear are not permitted in the dining room.
+              Maison Paris has a formal dress code: collared shirts required for gentlemen; no jeans.
+              Children's dress code is relaxed — smart casual is appreciated but not strictly enforced.
+
+              PAYMENT METHODS:
+              All major credit and debit cards are accepted (Visa, Mastercard, Amex, Discover).
+              Contactless and mobile payments (Apple Pay, Google Pay) are accepted at all locations.
+              Cash is accepted at The Brooklyn Grill and El Rancho only.
+              Gift cards are accepted at all locations. Gift cards cannot be used for online bookings.
+
+              LATE ARRIVAL POLICY:
+              Reservations are held for 15 minutes past the booking time.
+              After 15 minutes without contact, the table may be released to walk-in customers.
+              If running late, customers should call the restaurant or message this assistant to extend the hold.
+
+              CHILDREN POLICY:
+              Children are welcome at all The Diner restaurants.
+              High chairs and booster seats are available — please request when booking.
+              A children's menu is available at La Bella Italia, El Rancho, and The Brooklyn Grill.
+              Sakura Garden and Maison Paris do not offer a dedicated children's menu but can accommodate dietary needs.
+
+              PET POLICY:
+              Pets are not permitted inside any of The Diner restaurants.
+              Well-behaved dogs on a leash are welcome on outdoor terraces where available.
+              El Rancho and The Brooklyn Grill have outdoor seating areas that welcome dogs.
+
+              SPECIAL REQUESTS AND DIETARY NEEDS:
+              Special requests (dietary restrictions, allergies, seating preferences, celebrations) should be noted at booking time.
+              All restaurants can accommodate vegetarian and gluten-free requirements with advance notice.
+              For severe allergies, customers should contact the restaurant directly before arriving.
+              Birthday or anniversary setups (candles, decorations) are available with 24-hour advance notice.
+
+              RESERVATION MODIFICATIONS:
+              Reservations can be modified up to 2 hours before the booking time at no charge.
+              Party size changes of more than 4 guests require 24-hour notice.
+              Restaurant changes are treated as a cancellation and new booking — cancellation policy applies.
 
         actions:
             get_restaurant_details: @actions.get_restaurant_details
