@@ -1,200 +1,200 @@
-# Aria Diner Agent — Capstone Agentforce
+# Aria Diner Agent — Agentforce Capstone
 
-Agentforce Service Agent desenvolvido como capstone do programa **FDE "Ready in Six" (R6) Onboarding** da Salesforce. Use case: **Online Hospitality Platform** — plataforma digital de gestão de restaurantes e reservas.
+Agentforce Service Agent built as the capstone project for the **Salesforce FDE "Ready in Six" (R6) Onboarding Program**. Use case: **Online Hospitality Platform** — a digital platform for restaurant discovery and reservation management.
 
 ---
 
-## Sumário
+## Table of Contents
 
-1. [O que é Agent Script](#1-o-que-é-agent-script)
-2. [Estrutura do arquivo `.agent`](#2-estrutura-do-arquivo-agent)
-3. [Arquitetura do Aria](#3-arquitetura-do-aria)
-4. [Subagents — guia detalhado](#4-subagents--guia-detalhado)
-5. [Fluxo de autenticação OTP](#5-fluxo-de-autenticação-otp)
-6. [Variáveis de estado](#6-variáveis-de-estado)
+1. [What is Agent Script](#1-what-is-agent-script)
+2. [The `.agent` file structure](#2-the-agent-file-structure)
+3. [Aria's architecture](#3-arias-architecture)
+4. [Subagents — detailed guide](#4-subagents--detailed-guide)
+5. [OTP authentication flow](#5-otp-authentication-flow)
+6. [Session variables](#6-session-variables)
 7. [Apex Actions](#7-apex-actions)
 8. [Data model](#8-data-model)
-9. [Como deployar](#9-como-deployar)
-10. [Como testar](#10-como-testar)
-11. [Lições aprendidas](#11-lições-aprendidas)
+9. [How to deploy](#9-how-to-deploy)
+10. [How to test](#10-how-to-test)
+11. [Lessons learned](#11-lessons-learned)
 
 ---
 
-## 1. O que é Agent Script
+## 1. What is Agent Script
 
-**Agent Script** é a linguagem de scripting da Salesforce para criar agentes de IA na plataforma **Atlas Reasoning Engine** (Agentforce). É uma linguagem declarativa e de domínio específico (DSL) — não é JavaScript, Python nem AppleScript.
+**Agent Script** is Salesforce's scripting language for building AI agents on the **Atlas Reasoning Engine** (Agentforce). It is a declarative, domain-specific language (DSL) — not JavaScript, Python, or any other general-purpose language.
 
-### Como o Agent Script executa
+### How Agent Script executes
 
-A execução acontece em **duas fases** por turno de conversa:
+Every conversation turn runs in **two phases**:
 
 ```
-Turno do usuário
-      ↓
-┌─────────────────────────────────────┐
-│  FASE 1 — Resolução Determinística  │
-│  • Avalia if/else                   │
-│  • Executa run @actions.X           │
-│  • Seta variáveis com set           │
-│  • Monta o prompt textual           │
-└─────────────────────────────────────┘
-      ↓
-┌─────────────────────────────────────┐
-│  FASE 2 — Raciocínio do LLM         │
-│  • Recebe o prompt montado          │
-│  • Decide quais actions chamar      │
-│  • Gera a resposta ao usuário       │
-└─────────────────────────────────────┘
+User message arrives
+        ↓
+┌──────────────────────────────────────┐
+│  PHASE 1 — Deterministic Resolution  │
+│  • Evaluates if/else conditions      │
+│  • Executes run @actions.X           │
+│  • Sets variables with set           │
+│  • Builds the text prompt            │
+└──────────────────────────────────────┘
+        ↓
+┌──────────────────────────────────────┐
+│  PHASE 2 — LLM Reasoning             │
+│  • Receives the resolved prompt      │
+│  • Decides which actions to call     │
+│  • Generates the response            │
+└──────────────────────────────────────┘
 ```
 
-**Regra fundamental:** lógica determinística controla *o que o agente sabe*; o LLM controla *o que fazer com esse conhecimento*.
+**Core rule:** deterministic logic controls *what the agent knows*; the LLM controls *what to do with that knowledge*.
 
 ---
 
-## 2. Estrutura do arquivo `.agent`
+## 2. The `.agent` file structure
 
-Um arquivo `.agent` tem 8 blocos no topo, nesta ordem obrigatória:
+An `.agent` file has up to 8 top-level blocks in this mandatory order:
 
 ```yaml
-system:          # Instruções globais + mensagens de boas-vindas/erro
-config:          # Metadados do agente (nome, tipo, usuário padrão)
-variables:       # Estado da sessão (mutable e linked)
-connection:      # Canal de mensagens e rota de escalation
-knowledge:       # (opcional) Base de conhecimento ADL
-language:        # Locale padrão
-start_agent:     # Ponto de entrada obrigatório — o roteador central
-subagent:        # Um ou mais subagents especializados
+system:          # Global instructions + welcome/error messages
+config:          # Agent metadata (name, type, default user)
+variables:       # Session state (mutable and linked)
+connection:      # Messaging channel and escalation route
+knowledge:       # (optional) Agentforce Data Library
+language:        # Default locale
+start_agent:     # Required entry point — the central router
+subagent:        # One or more specialized subagents
 ```
 
-Dentro de cada `start_agent` ou `subagent`:
+Inside each `start_agent` or `subagent`:
 
 ```yaml
-subagent meu_subagent:
-    description: "..."          # obrigatório — o LLM usa para roteamento
-    before_reasoning:           # roda ANTES do LLM (determinístico)
+subagent my_subagent:
+    description: "..."          # required — LLM uses this for routing
+    before_reasoning:           # runs BEFORE the LLM (deterministic)
         set @variables.x = True
-    reasoning:                  # bloco principal
-        instructions: ->        # prompt para o LLM
-            | Texto aqui.
-        actions:                # ferramentas disponíveis ao LLM
-            minha_action: @actions.xyz
-    after_reasoning:            # roda DEPOIS do LLM (determinístico)
+    reasoning:                  # main block
+        instructions: ->        # prompt sent to the LLM
+            | Text here.
+        actions:                # tools available to the LLM
+            my_action: @actions.xyz
+    after_reasoning:            # runs AFTER the LLM (deterministic)
         set @variables.y = True
-    actions:                    # definições das actions (target Apex/Flow)
+    actions:                    # action definitions (Apex/Flow targets)
         xyz:
-            target: "apex://MinhaClasse"
+            target: "apex://MyClass"
 ```
 
-### Sintaxe das instructions
+### Instructions syntax
 
-Há dois modos:
+Two modes are available:
 
 ```yaml
-# Modo estático — texto fixo, sem lógica
+# Static mode — fixed text, no logic
 instructions: |
-    Ajude o cliente. Use a action {!@actions.buscar}.
+    Help the customer. Use {!@actions.search} to look up data.
 
-# Modo dinâmico (arrow) — combina lógica com texto
+# Dynamic mode (arrow) — combines logic with text
 instructions: ->
-    if @variables.autenticado == True:
-        | Bem-vindo, {!@variables.nome}!
+    if @variables.authenticated == True:
+        | Welcome back, {!@variables.name}!
     else:
-        | Por favor, verifique sua identidade primeiro.
+        | Please verify your identity first.
 ```
 
-O prefixo `|` inicia uma linha de texto que vai para o prompt do LLM. O `{!@variables.x}` injeta o valor de uma variável no texto.
+The `|` prefix starts a line of text that goes into the LLM's prompt. `{!@variables.x}` injects a variable's value into that text.
 
 ---
 
-## 3. Arquitetura do Aria
+## 3. Aria's architecture
 
-O Aria usa o padrão **Hub-and-Spoke + Verification Gate**:
+Aria uses the **Hub-and-Spoke + Verification Gate** pattern:
 
 ```
                     ┌─────────────────┐
-                    │   aria_router   │  ← start_agent (hub central)
-                    │  (before_reason)│
+                    │   aria_router   │  ← start_agent (central hub)
+                    │  (before_reas.) │
                     └────────┬────────┘
-           ┌─────────┬───────┼────────┬──────────┬────────────┐
-           ↓         ↓       ↓        ↓          ↓            ↓
-         faq    create_  auth_    post_      escalation  ambiguous/
-                reserv.  gate     inter.                 off_topic
-                    ↓       ↓
-              (sem auth) auth_verify
+         ┌──────────┬────────┼────────┬───────────┬──────────────┐
+         ↓          ↓        ↓        ↓           ↓              ↓
+        faq     create_   auth_    post_      escalation   ambiguous/
+                reserv.   gate     inter.                  off_topic
+                    ↓        ↓
+              (no auth)  auth_verify
                               ↓
                        reservation_hub
-                        ↙         ↘
-               modify_res.    cancel_res.
+                         ↙          ↘
+               modify_res.      cancel_res.
 ```
 
-### Por que Hub-and-Spoke?
+### Why Hub-and-Spoke?
 
-- Cada `start_agent` e `subagent` é um **escopo isolado** — o LLM foca em uma única responsabilidade
-- Transições são one-way (`@utils.transition to`) — sem retorno ao subagent anterior no mesmo turno
-- O `before_reasoning` do hub intercepta turnos e redireciona deterministicamente quando um fluxo multi-turno está em progresso
+- Each `start_agent` and `subagent` is an **isolated scope** — the LLM focuses on a single responsibility
+- Transitions are one-way (`@utils.transition to`) — no return to the previous subagent within the same turn
+- The hub's `before_reasoning` intercepts incoming turns and deterministically redirects when a multi-turn flow is in progress
 
-### Gates no `before_reasoning` do router
+### Router `before_reasoning` gates
 
 ```yaml
 start_agent aria_router:
     before_reasoning:
-        # Se OTP foi enviado, força verificação do código
+        # If OTP was sent, force code verification
         if @variables.otp_sent == True and @variables.customer_authenticated == False:
             transition to @subagent.auth_verify_code
-        # Se auth iniciou mas OTP ainda não foi enviado
+        # If auth started but OTP not yet sent
         if @variables.auth_in_progress == True and @variables.otp_sent == False and @variables.customer_authenticated == False:
             transition to @subagent.authentication_gate
-        # Se DSAT foi iniciado mas não coletado
+        # If DSAT survey started but not yet collected
         if @variables.dsat_started == True and @variables.dsat_collected == False:
             transition to @subagent.post_interaction
 ```
 
-Este padrão garante que **fluxos multi-turno** (auth OTP, DSAT) continuem corretamente mesmo que o usuário envie uma mensagem qualquer — o roteador nunca perde o fio da conversa.
+This pattern ensures **multi-turn flows** (OTP auth, DSAT survey) continue correctly even if the user sends an unrelated message — the router never loses track of the conversation state.
 
 ---
 
-## 4. Subagents — guia detalhado
+## 4. Subagents — detailed guide
 
 ### `aria_router` (start_agent)
 
-**Responsabilidade:** classificar o intent do usuário e rotear para o subagent correto.
+**Responsibility:** classify the user's intent and route to the correct subagent.
 
-Regra de negócio importante:
-- **Nova reserva** → `create_reservation` direto, **sem autenticação**
-- **Modificar/cancelar** → `authentication_gate` se não autenticado, `reservation_hub` se já autenticado
+Key business rule:
+- **New reservation** → `create_reservation` directly, **no authentication required**
+- **Modify/cancel** → `authentication_gate` if not authenticated, `reservation_hub` if already verified
 
 ```yaml
 go_to_create: @utils.transition to @subagent.create_reservation
     description: "Customer wants to make a NEW reservation — no authentication required"
 
 go_to_auth: @utils.transition to @subagent.authentication_gate
-    description: "Customer wants to MODIFY or CANCEL an existing reservation and has not yet verified identity"
+    description: "Customer wants to MODIFY or CANCEL and has not yet verified identity"
     available when @variables.customer_authenticated == False
 ```
 
-O `available when` remove a action do toolset do LLM quando a condição não é atendida.
+The `available when` clause removes an action from the LLM's toolset when the condition is not met.
 
 ---
 
 ### `faq`
 
-**Responsabilidade:** responder perguntas sobre restaurantes sem exigir login.
+**Responsibility:** answer restaurant questions without requiring login.
 
-Usa a action `get_restaurant_details` (Apex `GetRestaurantDetails`) e instrui o LLM a usar os valores exatos retornados — sem parafrasear. Isso evita **grounding failures** (quando o LLM inventa dados não presentes no output da action).
+Uses the `get_restaurant_details` action (Apex `GetRestaurantDetails`) and instructs the LLM to use the exact values returned — without paraphrasing. This prevents **grounding failures** (the LLM hallucinating data not present in the action output).
 
 ---
 
 ### `authentication_gate` + `auth_verify_code`
 
-Ver seção 5 para o fluxo completo.
+See section 5 for the full flow.
 
 ---
 
 ### `reservation_hub`
 
-**Responsabilidade:** roteador pós-autenticação.
+**Responsibility:** post-authentication router.
 
-Tem um `before_reasoning` defensivo:
+Has a defensive `before_reasoning`:
 
 ```yaml
 before_reasoning:
@@ -202,17 +202,17 @@ before_reasoning:
         transition to @subagent.authentication_gate
 ```
 
-Isso garante que mesmo que o LLM tente acessar este subagent diretamente, o usuário não autenticado seja redirecionado.
+This ensures that even if the LLM tries to access this subagent directly, unauthenticated users are redirected to verify first.
 
 ---
 
 ### `create_reservation`
 
-**Responsabilidade:** criar nova reserva.
+**Responsibility:** create a new booking.
 
-Fluxo: coleta restaurante + data/hora + tamanho do grupo → verifica disponibilidade → cria booking.
+Flow: collects restaurant + date/time + party size → checks availability → creates booking.
 
-O `customerName` é preenchido diretamente da variável `@variables.customer_name` (ou do que o usuário informa se não autenticado):
+The `customerName` is bound directly from the session variable (or from what the user provides as a guest):
 
 ```yaml
 create_booking: @actions.create_booking
@@ -226,104 +226,104 @@ create_booking: @actions.create_booking
 
 ### `post_interaction`
 
-**Responsabilidade:** coletar rating DSAT (1–5) e registrar no Salesforce.
+**Responsibility:** collect a DSAT rating (1–5) and log it to Salesforce.
 
-Usa o **Post-Action Loop pattern** — o `run @actions.log_interaction` dispara deterministicamente na Fase 1 quando `dsat_score` está preenchido:
+Uses the **Post-Action Loop pattern** — `run @actions.log_interaction` fires deterministically in Phase 1 once `dsat_score` is populated:
 
 ```yaml
 instructions: ->
     if @variables.dsat_score != "" and @variables.dsat_collected == False:
-        run @actions.log_interaction      # ← determinístico, não depende do LLM
+        run @actions.log_interaction      # ← deterministic, does not depend on the LLM
             with dsatScore = @variables.dsat_score
             ...
             set @variables.dsat_collected = @outputs.success
 ```
 
-O `after_reasoning` seta `dsat_started = True` após o primeiro turno, o que faz o `before_reasoning` do router redirecionar turnos subsequentes de volta aqui.
+The `after_reasoning` sets `dsat_started = True` after the first turn, causing the router's `before_reasoning` to redirect subsequent turns back here until the rating is logged.
 
 ---
 
 ### `escalation`
 
-**Responsabilidade:** criar um Case no Service Cloud e transferir para humano via `@utils.escalate`.
+**Responsibility:** create a Case in Service Cloud and hand off to a human via `@utils.escalate`.
 
 ```yaml
 connect_to_human: @utils.escalate
     description: "Transfer the customer to a live human agent"
 ```
 
-`@utils.escalate` é exclusivo de `AgentforceServiceAgent` com `connection messaging:` configurado.
+`@utils.escalate` is exclusive to `AgentforceServiceAgent` with a `connection messaging:` block configured.
 
 ---
 
-## 5. Fluxo de autenticação OTP
+## 5. OTP authentication flow
 
-O fluxo de verificação de identidade usa dois subagents separados:
+The identity verification flow uses two separate subagents:
 
 ```
-Usuário quer modify/cancel
-        ↓
+User wants to modify/cancel
+          ↓
 [ authentication_gate ]
-  • Pede email
-  • Chama send_code (Apex SendVerificationCode)
-  • Seta auth_in_progress = True (after_reasoning)
-        ↓ (próximo turno — router redireciona via before_reasoning)
+  • Asks for email
+  • Calls send_code (Apex SendVerificationCode)
+  • Sets auth_in_progress = True (after_reasoning)
+          ↓  (next turn — router redirects via before_reasoning)
 [ auth_verify_code ]
-  • Pede o código de 6 dígitos
-  • Chama verify_code (Apex VerifyOtpCode)
-  • Se OK: customer_authenticated = True → vai para reservation_hub
-  • Se falhou: oferece nova tentativa ou escalation
+  • Asks for the 6-digit code
+  • Calls verify_code (Apex VerifyOtpCode)
+  • If OK: customer_authenticated = True → goes to reservation_hub
+  • If failed: offers retry or escalation
 ```
 
-### Por que dois subagents?
+### Why two separate subagents?
 
-O platform avalia `available when` **antes** do LLM rodar no turno — então uma action com `available when @variables.customer_email != ""` ficava invisível no mesmo turno em que o email era coletado. Separando em subagents distintos, cada um processa em seu próprio turno e os gates funcionam corretamente.
+The platform evaluates `available when` **before** the LLM runs in a turn — so an action gated with `available when @variables.customer_email != ""` was invisible in the same turn the email was collected. By splitting into separate subagents, each one processes in its own turn and the gates work correctly.
 
-### Código de demonstração
+### Demo code
 
-Para demo, o código é fixo: **`123456`** (hardcoded no Apex `VerifyOtpCode`). Em produção, substituir pela chamada real de envio de email.
+For demonstration purposes, the code is fixed: **`123456`** (hardcoded in `VerifyOtpCode`). Replace with a real email delivery call for production.
 
 ---
 
-## 6. Variáveis de estado
+## 6. Session variables
 
-| Variável | Tipo | Descrição |
+| Variable | Type | Description |
 |---|---|---|
-| `customer_authenticated` | boolean | True após OTP verificado |
-| `customer_email` | string | Email coletado na auth |
-| `customer_contact_id` | string | Id do Contact Salesforce |
-| `customer_name` | string | Nome do cliente verificado |
-| `booking_number` | string | Número da última reserva criada/modificada |
-| `auth_in_progress` | boolean | True enquanto fluxo de auth está ativo |
-| `otp_sent` | boolean | True após código enviado por email |
-| `otp_code` | string | Código digitado pelo usuário |
-| `dsat_started` | boolean | True após survey iniciado |
-| `dsat_score` | string | Rating 1–5 do usuário |
-| `dsat_collected` | boolean | True após log_interaction executar |
+| `customer_authenticated` | boolean | True after OTP is verified |
+| `customer_email` | string | Email collected during auth |
+| `customer_contact_id` | string | Salesforce Contact Id |
+| `customer_name` | string | Verified customer's full name |
+| `booking_number` | string | Confirmation number of the last booking action |
+| `auth_in_progress` | boolean | True while the auth flow is active |
+| `otp_sent` | boolean | True after a code was sent by email |
+| `otp_code` | string | Code entered by the user |
+| `dsat_started` | boolean | True after the survey was prompted |
+| `dsat_score` | string | Rating 1–5 provided by the user |
+| `dsat_collected` | boolean | True after log_interaction executes |
 
-**Mutable variables** têm valor padrão e o agente pode ler e escrever.
-**Linked variables** (`EndUserId`, `ContactId`, etc.) são somente leitura, populadas pela sessão de messaging.
+**Mutable variables** have a default value and the agent can read and write them.  
+**Linked variables** (`EndUserId`, `ContactId`, etc.) are read-only, populated from the messaging session context.
 
 ---
 
 ## 7. Apex Actions
 
-Todas as classes usam `@InvocableMethod` e `Database.queryWithBinds` com `SYSTEM_MODE` para evitar problemas de sharing.
+All classes use `@InvocableMethod` and `Database.queryWithBinds` with `SYSTEM_MODE` to avoid sharing rule issues.
 
-| Classe | Descrição |
+| Class | Description |
 |---|---|
-| `GetRestaurantDetails` | Busca restaurante por nome (LIKE) ou Id |
-| `CheckBookingAvailability` | Verifica disponibilidade de horário |
-| `CreateBooking` | Cria `Booking__c` com status Confirmed |
-| `ModifyOrCancelBooking` | Modifica ou cancela booking existente (action = MODIFY ou CANCEL) |
-| `SendVerificationCode` | Verifica se Contact existe pelo email e "envia" o código (fixo 123456 em demo) |
-| `VerifyOtpCode` | Valida o código e retorna o Contact autenticado |
-| `VerifyCustomerIdentity` | Método legado — verifica email + booking number (não usado no Aria) |
-| `LogAgentInteraction` | Cria `Agent_Interaction__c` com DSAT score |
-| `CreateServiceCase` | Cria Case com Origin='Agentforce' para escalations |
-| `InitDsatSurvey` | Marca a survey como iniciada (retorna `started = true`) |
+| `GetRestaurantDetails` | Looks up a restaurant by name (LIKE) or Salesforce Id |
+| `CheckBookingAvailability` | Checks availability for a given date, time, and party size |
+| `CreateBooking` | Creates a `Booking__c` record with Status = Confirmed |
+| `ModifyOrCancelBooking` | Modifies or cancels an existing booking (action = MODIFY or CANCEL) |
+| `SendVerificationCode` | Checks if a Contact exists for the email and "sends" the code (fixed `123456` in demo) |
+| `VerifyOtpCode` | Validates the code and returns the authenticated Contact |
+| `VerifyCustomerIdentity` | Legacy method — verifies email + booking number (not used by Aria) |
+| `LogAgentInteraction` | Creates an `Agent_Interaction__c` record with the DSAT score |
+| `CreateServiceCase` | Creates a Case with `Origin = 'Agentforce'` for escalations |
+| `InitDsatSurvey` | Marks the survey as started (returns `started = true`) |
 
-### Exemplo de padrão Invocable
+### Invocable pattern example
 
 ```java
 public class GetRestaurantDetails {
@@ -335,24 +335,24 @@ public class GetRestaurantDetails {
     public class Result {
         @InvocableVariable public Boolean found;
         @InvocableVariable public String restaurantName;
-        // ... outros campos
+        // ... other fields
     }
 
     @InvocableMethod(label='Get Restaurant Details')
     public static List<Result> execute(List<Request> requests) {
-        // implementação
+        // implementation
     }
 }
 ```
 
-No Agent Script, a referência é:
+In Agent Script, the reference looks like:
 
 ```yaml
 actions:
     get_details:
         target: "apex://GetRestaurantDetails"
         inputs:
-            restaurantIdOrName: string   # deve bater exatamente com o nome do @InvocableVariable
+            restaurantIdOrName: string   # must match the @InvocableVariable name exactly
                 is_required: True
         outputs:
             found: boolean
@@ -394,40 +394,40 @@ Agent_Interaction__c
 └── Notes__c
 ```
 
-**5 restaurantes de seed:** La Bella Italia, Sakura Garden, El Rancho, The Brooklyn Grill, Maison Paris
+**5 seed restaurants:** La Bella Italia, Sakura Garden, El Rancho, The Brooklyn Grill, Maison Paris
 
-**Contact de teste:** `john.smith@example.com` — use para testar o fluxo de autenticação.
+**Test Contact:** `john.smith@example.com` — use this to test the OTP authentication flow.
 
 ---
 
-## 9. Como deployar
+## 9. How to deploy
 
-### Pré-requisitos
+### Prerequisites
 
 - Salesforce CLI (`sf`) v2.x
-- Org com Agentforce habilitado
-- Einstein Agent User criado e licenciado
+- Org with Agentforce enabled
+- Einstein Agent User created and licensed
 
-### Passo a passo
+### Step by step
 
 ```bash
-# 1. Autenticar no org
+# 1. Authenticate to the org
 sf org login web -a DinerAgent
 
-# 2. Deploy de toda a metadata
+# 2. Deploy all metadata
 sf project deploy start --source-dir force-app
 
-# 3. Atribuir a permission set ao Einstein Agent User
+# 3. Assign the permission set to the Einstein Agent User
 sf org assign permset --name DinerAgent_Access \
   --on-behalf-of <einstein-agent-username>
 
-# 4. Atribuir também ao seu usuário (para testes)
+# 4. Assign it to your user as well (for testing)
 sf org assign permset --name DinerAgent_Access
 
-# 5. Publicar o agente
+# 5. Publish the agent
 sf agent publish authoring-bundle --json --api-name Aria_Diner_Agent
 
-# 6. Ativar
+# 6. Activate
 sf agent activate --json --api-name Aria_Diner_Agent
 ```
 
@@ -439,20 +439,20 @@ sf apex run --file scripts/apex/seed_data.apex
 
 ---
 
-## 10. Como testar
+## 10. How to test
 
-### Via CLI (authoring bundle — desenvolvimento)
+### Via CLI — authoring bundle (development inner loop)
 
 ```bash
-# Iniciar sessão
+# Start a session
 sf agent preview start --json --use-live-actions --authoring-bundle Aria_Diner_Agent
 
-# Enviar mensagem (substituir SESSION_ID)
+# Send a message (replace SESSION_ID)
 sf agent preview send --json --authoring-bundle Aria_Diner_Agent \
   --session-id <SESSION_ID> -u "Tell me about La Bella Italia"
 ```
 
-### Via CLI (agente publicado)
+### Via CLI — published agent
 
 ```bash
 sf agent preview start --json --api-name Aria_Diner_Agent
@@ -460,74 +460,74 @@ sf agent preview send --json --api-name Aria_Diner_Agent \
   --session-id <SESSION_ID> -u "I want to book a table"
 ```
 
-### Roteiro de testes
+### Test script
 
-| Fluxo | Mensagens |
+| Flow | Messages |
 |---|---|
 | FAQ | `"Tell me about La Bella Italia"` |
-| Nova reserva | `"I want to book a table"` → `"El Rancho, 2 people, July 25 at 7pm"` |
-| Auth OTP | `"I want to modify my reservation"` → `"john.smith@example.com"` → `"123456"` |
-| Email inválido | `"I want to cancel"` → `"nobody@fake.com"` |
-| Código errado | auth com john.smith → `"000000"` |
+| New reservation (no auth) | `"I want to book a table"` → `"El Rancho, 2 people, July 25 at 7pm"` |
+| OTP auth + modify | `"I want to modify my reservation"` → `"john.smith@example.com"` → `"123456"` → `"Change BKG-0010 to July 28 at 8pm"` |
+| Unknown email | `"I want to cancel"` → `"nobody@fake.com"` |
+| Wrong code | auth as john.smith → `"000000"` |
 | Escalation | `"I need to speak with a human"` |
-| DSAT | `"I'm done, thanks"` → `"4"` |
+| DSAT survey | `"I'm done, thanks"` → `"4"` |
 
-### Verificar registros criados
+### Verify records created
 
 ```bash
 # Bookings
 sf data query --json -q "SELECT Name, Status__c, Customer_Name__c FROM Booking__c ORDER BY CreatedDate DESC LIMIT 5"
 
-# Interações DSAT
+# DSAT interactions
 sf data query --json -q "SELECT Name, DSAT_Score__c, CreatedDate FROM Agent_Interaction__c ORDER BY CreatedDate DESC LIMIT 5"
 
-# Cases de escalation
+# Escalation cases
 sf data query --json -q "SELECT CaseNumber, Subject, Origin FROM Case ORDER BY CreatedDate DESC LIMIT 5"
 ```
 
 ---
 
-## 11. Lições aprendidas
+## 11. Lessons learned
 
-### Sobre Agent Script
+### Agent Script
 
-1. **`run` em `after_reasoning` é instável** — use apenas `set` e `transition to` em directive blocks. Para chamar Apex deterministicamente, use `run` dentro de `instructions: ->`.
+1. **`run` inside `after_reasoning` is unreliable** — only use `set` and `transition to` in directive blocks. To call Apex deterministically, use `run` inside `instructions: ->`.
 
-2. **`available when` não reavalia entre tool calls no mesmo turno** — se uma action seta uma variável e outra action depende dela no mesmo turno, a segunda não vai aparecer. Solução: subagents separados, um por turno.
+2. **`available when` does not re-evaluate between tool calls in the same turn** — if one action sets a variable and another depends on it in the same turn, the second action won't appear in the toolset. Solution: separate subagents, one per turn.
 
-3. **Nested `if` dentro de `if` causa `error compiling`** no `preview start` mesmo passando no `validate authoring-bundle` — o servidor tem restrições que o validador local não detecta.
+3. **Nested `if` inside `if` causes `error compiling` at `preview start`** even when `validate authoring-bundle` passes — the server has compile-time restrictions the local validator doesn't catch.
 
-4. **`available when @variables.X != ""`** quando `X` está vazio pode esconder a action mesmo sendo a única opção do subagent. Para actions críticas de entrada, remova o gate e controle via instructions.
+4. **`available when @variables.X != ""`** when `X` is empty can hide a critical entry-point action even when it is the only logical next step. For actions that must always be available, remove the gate and control behavior through instructions instead.
 
-5. **Fluxos multi-turno precisam de flags de estado + `before_reasoning` no router** — cada turno começa no `start_agent`. A transição one-way do turno anterior não persiste o controle. Solução: variável flag + gate no `before_reasoning`.
+5. **Multi-turn flows require state flags + `before_reasoning` in the router** — every turn starts at `start_agent`. The one-way transition from the previous turn does not persist control. Solution: a boolean flag variable + a gate in `before_reasoning`.
 
-### Sobre arquitetura
+### Architecture
 
-6. **Separar fluxos por responsabilidade de autenticação** — nova reserva (guest) vs. modify/cancel (requer identity). Isso simplifica o roteamento e é mais realista para o negócio.
+6. **Separate flows by authentication requirement** — new reservation (guest) vs. modify/cancel (requires identity). This simplifies routing and reflects real-world business rules.
 
-7. **Post-Action Loop para ações obrigatórias no final da sessão** — o LLM tende a dar goodbye sem chamar actions opcionais. Coloque o `run @actions.X` determinístico no topo do `instructions: ->` com guard na variável de estado.
+7. **Use the Post-Action Loop for mandatory end-of-session actions** — the LLM tends to generate a goodbye message without calling optional actions. Place `run @actions.X` deterministically at the top of `instructions: ->` gated on a state variable.
 
 ---
 
-## Estrutura do repositório
+## Repository structure
 
 ```
 CapstoneAgentforce/
-├── Aria_Diner_Agent-AgentSpec.md          # Especificação de design do agente
+├── Aria_Diner_Agent-AgentSpec.md          # Agent design specification
 ├── force-app/main/default/
 │   ├── aiAuthoringBundles/
 │   │   └── Aria_Diner_Agent/
-│   │       └── Aria_Diner_Agent.agent     # Agent Script principal
+│   │       └── Aria_Diner_Agent.agent     # Main Agent Script file
 │   ├── classes/                           # Apex Actions
 │   │   ├── GetRestaurantDetails.cls
 │   │   ├── CheckBookingAvailability.cls
 │   │   ├── CreateBooking.cls
 │   │   ├── ModifyOrCancelBooking.cls
-│   │   ├── SendVerificationCode.cls       # OTP — envia código
-│   │   ├── VerifyOtpCode.cls              # OTP — valida código
+│   │   ├── SendVerificationCode.cls       # OTP — sends the code
+│   │   ├── VerifyOtpCode.cls              # OTP — validates the code
 │   │   ├── LogAgentInteraction.cls        # DSAT logging
 │   │   ├── CreateServiceCase.cls          # Escalation
-│   │   └── InitDsatSurvey.cls             # Flag survey iniciada
+│   │   └── InitDsatSurvey.cls             # Survey started flag
 │   ├── objects/                           # Custom objects
 │   │   ├── Restaurant__c/
 │   │   ├── Booking__c/
@@ -535,10 +535,10 @@ CapstoneAgentforce/
 │   └── permissionsets/
 │       └── DinerAgent_Access.permissionset-meta.xml
 ├── scripts/apex/
-│   └── seed_data.apex                     # Dados de teste
+│   └── seed_data.apex                     # Test data
 └── sfdx-project.json
 ```
 
 ---
 
-*Desenvolvido como capstone do programa FDE "Ready in Six" — Salesforce, 2026.*
+*Built as the capstone project for the Salesforce FDE "Ready in Six" Onboarding Program, 2026.*
