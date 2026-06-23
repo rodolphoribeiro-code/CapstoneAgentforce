@@ -1,0 +1,21 @@
+{
+  "required" : [ "email", "code" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "code" : {
+      "title" : "Code",
+      "description" : "6-digit verification code entered by the customer",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "email" : {
+      "title" : "Email",
+      "description" : "Customer email address",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

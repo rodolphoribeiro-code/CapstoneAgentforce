@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BotVersion xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>v1</fullName>
+    <articleAnswersGPTEnabled>false</articleAnswersGPTEnabled>
+    <botDialogs>
+        <botSteps>
+            <botMessages>
+                <message>Hi! I&apos;m Aria, The Diner&apos;s AI-powered assistant. I can help you find restaurants, answer questions about our dining options, or manage your reservation. How can I help you today?</message>
+                <messageIdentifier>88408ca1-6975-454f-9a2a-0b3b5d80fcc7</messageIdentifier>
+            </botMessages>
+            <stepIdentifier>e55d1620-79a6-4cf9-925c-fc2ead69848f</stepIdentifier>
+            <type>Message</type>
+        </botSteps>
+        <botSteps>
+            <stepIdentifier>dbe9e283-08aa-4e34-912b-563a4a782123</stepIdentifier>
+            <type>Wait</type>
+        </botSteps>
+        <developerName>Welcome</developerName>
+        <isPlaceholderDialog>false</isPlaceholderDialog>
+        <label>Welcome</label>
+        <showInFooterMenu>false</showInFooterMenu>
+    </botDialogs>
+    <botDialogs>
+        <botSteps>
+            <botMessages>
+                <message>I&apos;m sorry, something went wrong. Please try again or type &apos;agent&apos; to speak with a team member.</message>
+                <messageIdentifier>5a1498ec-2a1a-43b7-8555-b4cc712b7506</messageIdentifier>
+            </botMessages>
+            <stepIdentifier>4f0fe7e9-1446-4b5a-a3bf-d8d0f92078c0</stepIdentifier>
+            <type>Message</type>
+        </botSteps>
+        <botSteps>
+            <stepIdentifier>042fd219-c353-4b73-9e07-b48f6ec3f794</stepIdentifier>
+            <type>Wait</type>
+        </botSteps>
+        <developerName>Rich_Content_Error_Handling</developerName>
+        <isPlaceholderDialog>false</isPlaceholderDialog>
+        <label>Error Handler</label>
+        <showInFooterMenu>false</showInFooterMenu>
+    </botDialogs>
+    <botDialogs>
+        <botSteps>
+            <conversationSystemMessage>
+                <type>Transfer</type>
+            </conversationSystemMessage>
+            <stepIdentifier>05c3ac52-dc9b-4e0d-8452-84a926db1a38</stepIdentifier>
+            <type>SystemMessage</type>
+        </botSteps>
+        <developerName>Transfer_To_Agent</developerName>
+        <isPlaceholderDialog>false</isPlaceholderDialog>
+        <label>Transfer To Agent</label>
+        <showInFooterMenu>false</showInFooterMenu>
+    </botDialogs>
+    <citationsEnabled>false</citationsEnabled>
+    <conversationDefinitionPlanners>
+        <genAiPlannerName>Aria_Diner_Agent_v1</genAiPlannerName>
+    </conversationDefinitionPlanners>
+    <conversationSystemDialogs>
+        <dialog>Rich_Content_Error_Handling</dialog>
+        <type>ErrorHandling</type>
+    </conversationSystemDialogs>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>The next topic to be visited</description>
+        <developerName>AgentScriptInternal_next_topic</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Next Topic</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>The agent instructions</description>
+        <developerName>AgentScriptInternal_agent_instructions</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Agent Instructions</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Reason for escalating to a human agent</description>
+        <developerName>escalation_reason</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Escalation Reason</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Email address provided by the customer for identity verification</description>
+        <developerName>customer_email</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Email</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Salesforce Contact Id of the verified customer</description>
+        <developerName>customer_contact_id</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Contact Id</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the DSAT survey has been prompted to the customer</description>
+        <developerName>dsat_started</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Dsat Started</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Message returned by send_code to show the customer</description>
+        <developerName>otp_send_message</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Send Message</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Existing booking number (BKG-XXXX) provided by the customer for identity verification</description>
+        <developerName>customer_booking_number</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Booking Number</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True while the customer is in the middle of the identity verification flow</description>
+        <developerName>auth_in_progress</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Auth In Progress</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after a verification code has been sent to the customer&apos;s email</description>
+        <developerName>otp_sent</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Sent</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after send_code confirms a Contact exists for the given email</description>
+        <developerName>otp_contact_found</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Contact Found</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the DSAT rating has been collected and logged</description>
+        <developerName>dsat_collected</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Dsat Collected</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the customer has been verified via email and booking number</description>
+        <developerName>customer_authenticated</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Authenticated</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Salesforce Id of the restaurant selected by the customer</description>
+        <developerName>restaurant_id</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Restaurant Id</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Booking confirmation number from the most recent reservation action</description>
+        <developerName>booking_number</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Booking Number</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>6-digit verification code entered by the customer</description>
+        <developerName>otp_code</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Code</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Customer satisfaction rating 1 to 5 collected from the customer</description>
+        <developerName>dsat_score</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Dsat Score</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>Runtime condition evaluation for if statements</description>
+        <developerName>AgentScriptInternal_condition</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Runtime Condition</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Full name of the verified customer</description>
+        <developerName>customer_name</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Name</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <copilotPrimaryLanguage>en_US</copilotPrimaryLanguage>
+    <defaultStdObjForContactIdFltrEnabled>false</defaultStdObjForContactIdFltrEnabled>
+    <entryDialog>Welcome</entryDialog>
+    <intentDisambiguationEnabled>false</intentDisambiguationEnabled>
+    <intentV3Enabled>false</intentV3Enabled>
+    <isScriptCompatibleAgent>true</isScriptCompatibleAgent>
+    <knowledgeActionEnabled>false</knowledgeActionEnabled>
+    <knowledgeFallbackEnabled>false</knowledgeFallbackEnabled>
+    <smallTalkEnabled>false</smallTalkEnabled>
+    <staticPromptsEnabled>false</staticPromptsEnabled>
+    <stopRecPrompts>false</stopRecPrompts>
+    <stopWelcomePrompts>false</stopWelcomePrompts>
+    <surfacesEnabled>false</surfacesEnabled>
+    <toneType>Casual</toneType>
+</BotVersion>

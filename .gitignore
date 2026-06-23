@@ -1,0 +1,19 @@
+# Salesforce DX
+.sfdx/
+.sf/
+.localdevserver/
+
+# Node
+node_modules/
+npm-debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Test results
+tests/apex/

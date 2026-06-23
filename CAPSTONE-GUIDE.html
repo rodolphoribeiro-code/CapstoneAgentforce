@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intelligent Diner Support Agent — Capstone Guide</title>
+  <style>
+    :root {
+      --blue:    #0070d2;
+      --dark:    #032d60;
+      --accent:  #00a1e0;
+      --green:   #2e844a;
+      --yellow:  #f4bc25;
+      --red:     #ba0517;
+      --bg:      #f3f3f3;
+      --card:    #ffffff;
+      --border:  #d8dde6;
+      --text:    #1b1f2b;
+      --muted:   #54698d;
+      --code-bg: #1e2330;
+      --code-fg: #e8ecf0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    /* ── NAV ── */
+    nav { background: var(--dark); color: #fff; padding: 0 2rem; display: flex; align-items: center; gap: 2rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+    nav .logo { font-size: 1.05rem; font-weight: 700; padding: 1rem 0; white-space: nowrap; }
+    nav a { color: rgba(255,255,255,.75); text-decoration: none; font-size: .875rem; padding: .9rem .4rem; border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap; }
+    nav a:hover { color: #fff; border-bottom-color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero { background: linear-gradient(135deg, var(--dark) 0%, #0b4c8c 100%); color: #fff; padding: 4rem 2rem 3rem; text-align: center; }
+    .hero .badge { display: inline-block; background: var(--accent); color: #fff; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; padding: .3rem .9rem; border-radius: 999px; margin-bottom: 1.2rem; }
+    .hero h1 { font-size: 2.4rem; font-weight: 800; margin-bottom: .6rem; }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,.8); max-width: 600px; margin: 0 auto 2rem; }
+    .hero-stats { display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; }
+    .hero-stats div { text-align: center; }
+    .hero-stats .num { font-size: 2rem; font-weight: 800; color: var(--yellow); }
+    .hero-stats .lbl { font-size: .8rem; color: rgba(255,255,255,.65); text-transform: uppercase; letter-spacing: .05em; }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    section { margin-bottom: 3.5rem; }
+    h2 { font-size: 1.5rem; font-weight: 700; color: var(--dark); margin-bottom: 1.2rem; padding-bottom: .4rem; border-bottom: 3px solid var(--accent); display: inline-block; }
+    h3 { font-size: 1.1rem; font-weight: 700; color: var(--dark); margin: 1.2rem 0 .5rem; }
+
+    /* ── CARDS ── */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .card h3 { margin-top: 0; }
+    .card .meta { font-size: .8rem; color: var(--muted); margin-bottom: .5rem; }
+
+    /* ── TAGS ── */
+    .tag { display: inline-block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: .2rem .6rem; border-radius: 4px; margin-right: .3rem; }
+    .tag-apex   { background: #eaf3ff; color: #0058a0; }
+    .tag-system { background: #f4f0ff; color: #6b4fbb; }
+    .tag-data   { background: #e8f8ec; color: #1a5c2a; }
+    .tag-agent  { background: #fff4e0; color: #a05000; }
+
+    /* ── CODE ── */
+    pre { background: var(--code-bg); color: var(--code-fg); padding: 1.2rem 1.4rem; border-radius: 8px; overflow-x: auto; font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: .82rem; line-height: 1.7; margin: .8rem 0; }
+    code { background: #e8ecf4; color: var(--dark); padding: .15rem .4rem; border-radius: 4px; font-size: .82rem; font-family: 'Fira Code', monospace; }
+    pre code { background: none; color: inherit; padding: 0; }
+    .comment { color: #7a8fa6; }
+    .kw  { color: #79b8ff; }
+    .str { color: #9ecbff; }
+    .fn  { color: #b392f0; }
+    .val { color: #f8c555; }
+
+    /* ── FLOW DIAGRAM ── */
+    .flow { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; margin: 1rem 0; }
+    .flow-node { background: var(--card); border: 2px solid var(--accent); border-radius: 8px; padding: .7rem 1rem; font-size: .85rem; font-weight: 600; text-align: center; min-width: 130px; }
+    .flow-node.start { background: var(--dark); color: #fff; border-color: var(--dark); }
+    .flow-node.action { background: #eaf3ff; border-color: var(--blue); color: var(--blue); }
+    .flow-node.apex   { background: #f4f0ff; border-color: #8b5cf6; color: #5b21b6; }
+    .flow-arrow { display: flex; align-items: center; padding: 0 .3rem; font-size: 1.2rem; color: var(--muted); }
+
+    /* ── SUBAGENT MAP ── */
+    .subagent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .8rem; margin: 1rem 0; }
+    .subagent-card { border-radius: 8px; padding: 1rem; font-size: .85rem; }
+    .subagent-card .name { font-weight: 700; margin-bottom: .3rem; }
+    .subagent-card .desc { color: var(--muted); font-size: .78rem; }
+    .sa-router   { background: #e8f0fe; border-left: 4px solid #1a73e8; }
+    .sa-create   { background: #e8f8ec; border-left: 4px solid var(--green); }
+    .sa-cancel   { background: #fde8e8; border-left: 4px solid var(--red); }
+    .sa-modify   { background: #fff4e0; border-left: 4px solid #e07b00; }
+    .sa-info     { background: #eaf3ff; border-left: 4px solid var(--blue); }
+    .sa-escalate { background: #f4f0ff; border-left: 4px solid #8b5cf6; }
+    .sa-other    { background: #f5f5f5; border-left: 4px solid var(--muted); }
+
+    /* ── TEST SCENARIOS ── */
+    .scenario { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 1.2rem; }
+    .scenario-header { background: var(--dark); color: #fff; padding: .8rem 1.2rem; display: flex; justify-content: space-between; align-items: center; }
+    .scenario-header .title { font-weight: 700; font-size: .95rem; }
+    .scenario-header .label { font-size: .72rem; background: rgba(255,255,255,.2); padding: .2rem .6rem; border-radius: 4px; text-transform: uppercase; }
+    .scenario-body { padding: 1.2rem; background: var(--card); }
+    .chat { display: flex; flex-direction: column; gap: .6rem; }
+    .msg { max-width: 75%; padding: .65rem .9rem; border-radius: 12px; font-size: .875rem; line-height: 1.5; }
+    .msg.user   { background: var(--blue); color: #fff; align-self: flex-end; border-bottom-right-radius: 3px; }
+    .msg.agent  { background: #f0f4f8; color: var(--text); align-self: flex-start; border-bottom-left-radius: 3px; border: 1px solid var(--border); }
+    .msg.system { background: #fffbe6; color: #7a5c00; align-self: center; font-size: .78rem; font-style: italic; border: 1px dashed #e0c060; border-radius: 6px; max-width: 90%; text-align: center; }
+    .expect { margin-top: .9rem; padding: .7rem 1rem; background: #e8f8ec; border-radius: 6px; border-left: 3px solid var(--green); font-size: .82rem; }
+    .expect strong { color: var(--green); }
+
+    /* ── DATA TABLE ── */
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; background: var(--card); border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+    thead { background: var(--dark); color: #fff; }
+    th { padding: .7rem 1rem; text-align: left; font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+    td { padding: .65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+    .status-confirmed { color: var(--green); font-weight: 600; }
+    .status-cancelled { color: var(--red); font-weight: 600; }
+
+    /* ── CLI STEPS ── */
+    .steps { counter-reset: step; }
+    .step { display: flex; gap: 1rem; margin-bottom: 1.2rem; }
+    .step-num { counter-increment: step; min-width: 2rem; height: 2rem; background: var(--blue); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem; flex-shrink: 0; margin-top: .15rem; }
+    .step-content { flex: 1; }
+    .step-content p { margin-bottom: .4rem; font-size: .9rem; }
+
+    /* ── ALERT ── */
+    .alert { padding: .9rem 1.2rem; border-radius: 8px; font-size: .88rem; margin: .8rem 0; }
+    .alert-info   { background: #eaf3ff; border-left: 4px solid var(--blue); }
+    .alert-warn   { background: #fffbe6; border-left: 4px solid var(--yellow); }
+    .alert-green  { background: #e8f8ec; border-left: 4px solid var(--green); }
+
+    /* ── ARCH LAYERS ── */
+    .arch-layer { border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: .7rem; display: flex; align-items: flex-start; gap: 1rem; }
+    .arch-icon { font-size: 1.6rem; min-width: 2.2rem; text-align: center; }
+    .arch-label { font-weight: 700; font-size: .9rem; color: var(--dark); }
+    .arch-detail { font-size: .82rem; color: var(--muted); margin-top: .2rem; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--dark); color: rgba(255,255,255,.6); text-align: center; padding: 1.5rem; font-size: .8rem; }
+    footer strong { color: #fff; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Intelligent Diner Support Agent</div>
+  <a href="#overview">Overview</a>
+  <a href="#architecture">Architecture</a>
+  <a href="#data-model">Data Model</a>
+  <a href="#how-to-test">How to Test</a>
+  <a href="#test-scenarios">Test Scenarios</a>
+  <a href="#deploy">Deploy</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">FDE Ready in Six — Capstone</div>
+  <h1>Intelligent Diner Support Agent</h1>
+  <p>An Agentforce AI agent that helps restaurant guests create, modify, or cancel reservations and look up restaurant information — backed by live Salesforce data.</p>
+  <div class="hero-stats">
+    <div><div class="num">8</div><div class="lbl">Subagents</div></div>
+    <div><div class="num">4</div><div class="lbl">Apex Actions</div></div>
+    <div><div class="num">5</div><div class="lbl">Restaurants</div></div>
+    <div><div class="num">6+</div><div class="lbl">Live Bookings</div></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <h2>Overview</h2>
+    <div class="card">
+      <p>This agent was built as the capstone for the <strong>FDE "Ready in Six" (R6) Onboarding Program</strong>. The use case is an <strong>Online Hospitality Platform</strong> where guests interact with an AI-powered support agent to manage their restaurant reservations.</p>
+      <br/>
+      <p>The agent runs on the <strong>Atlas Reasoning Engine</strong> (Salesforce's native LLM orchestration layer) and is defined entirely in <strong>Agent Script</strong> — a declarative scripting language for authoring Agentforce agents. All business logic is implemented in <strong>Invocable Apex classes</strong> that run in <code>SYSTEM_MODE</code> to bypass field-level security restrictions for the Einstein Agent User.</p>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <div class="meta"><span class="tag tag-agent">Org</span></div>
+        <h3>Sandbox: DinerAgent</h3>
+        <p style="font-size:.85rem;color:var(--muted)">orgfarm-ebd7378759--devorg.sandbox.my.salesforce.com</p>
+      </div>
+      <div class="card">
+        <div class="meta"><span class="tag tag-apex">Agent Script</span></div>
+        <h3>Bundle: Intelligent_Diner_Support_Agent</h3>
+        <p style="font-size:.85rem;color:var(--muted)">AiAuthoringBundle metadata deployed via Salesforce CLI</p>
+      </div>
+      <div class="card">
+        <div class="meta"><span class="tag tag-system">Platform</span></div>
+        <h3>Atlas Reasoning Engine</h3>
+        <p style="font-size:.85rem;color:var(--muted)">Einstein Agent User runs all actions with SYSTEM_MODE Apex</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <h2>Architecture</h2>
+
+    <h3>Technology Stack</h3>
+    <div class="arch-layer" style="background:#eaf3ff">
+      <div class="arch-icon">🤖</div>
+      <div>
+        <div class="arch-label">Agent Script (.agent file)</div>
+        <div class="arch-detail">Declarative FSM definition: subagents, routing logic, gating conditions, variable state, action wiring. Stored in <code>aiAuthoringBundles/</code> metadata directory.</div>
+      </div>
+    </div>
+    <div class="arch-layer" style="background:#f4f0ff">
+      <div class="arch-icon">⚡</div>
+      <div>
+        <div class="arch-label">Invocable Apex (4 classes)</div>
+        <div class="arch-detail">Business logic layer. Each class is decorated with <code>@InvocableMethod</code> and queries/mutates Salesforce data using <code>Database.query(..., AccessLevel.SYSTEM_MODE)</code> to ensure the Einstein Agent User can read all fields regardless of FLS.</div>
+      </div>
+    </div>
+    <div class="arch-layer" style="background:#e8f8ec">
+      <div class="arch-icon">🗄️</div>
+      <div>
+        <div class="arch-label">Custom Objects (2 sObjects)</div>
+        <div class="arch-detail"><code>Restaurant__c</code> and <code>Booking__c</code> hold all live data. Linked by a lookup relationship. Permission Set <code>DinerAgent_Access</code> grants CRUD to both the human user and the Einstein Agent User.</div>
+      </div>
+    </div>
+    <div class="arch-layer" style="background:#fff4e0">
+      <div class="arch-icon">🔑</div>
+      <div>
+        <div class="arch-label">Permission Set: DinerAgent_Access</div>
+        <div class="arch-detail">Assigned to both your user and the Einstein Agent User (<code>agentforce_service_agent2.5it0yxbpwhk3…</code>). Grants object-level access to all 4 Apex classes. Field-level access for the agent is handled by <code>SYSTEM_MODE</code> in Apex. Note: <code>apexClassAccesses</code> must be granted via anonymous Apex — XML deploy fails for this org type.</div>
+      </div>
+    </div>
+
+    <h3>Subagent Map</h3>
+    <p style="font-size:.875rem;color:var(--muted);margin-bottom:.8rem">The agent uses a <strong>Hub-and-Spoke</strong> architecture. Every conversation starts at <code>agent_router</code>, which routes to a specialized subagent. Each subagent can transition back to the hub or escalate to a human.</p>
+    <div class="subagent-grid">
+      <div class="subagent-card sa-router">
+        <div class="name">agent_router <span style="font-size:.7rem;font-weight:400">(start)</span></div>
+        <div class="desc">Entry point. Classifies intent and routes to the correct subagent. Never executes actions itself.</div>
+      </div>
+      <div class="subagent-card sa-create">
+        <div class="name">create_booking</div>
+        <div class="desc">Collects restaurant name, date/time, party size, and customer name, then calls <code>CreateBooking</code> Apex. Uses <code>require_user_confirmation</code> for platform-native confirmation.</div>
+      </div>
+      <div class="subagent-card sa-cancel">
+        <div class="name">cancel_booking</div>
+        <div class="desc">Collects booking number, then calls <code>ModifyOrCancelBooking</code> with action=CANCEL. Platform confirmation via <code>require_user_confirmation: True</code>.</div>
+      </div>
+      <div class="subagent-card sa-modify">
+        <div class="name">modify_booking</div>
+        <div class="desc">Collects booking number + new date/time and/or party size, confirms, then calls <code>ModifyOrCancelBooking</code> with action=MODIFY.</div>
+      </div>
+      <div class="subagent-card sa-info">
+        <div class="name">restaurant_info</div>
+        <div class="desc">Collects restaurant name, calls <code>GetRestaurantDetails</code>, returns full details from the database.</div>
+      </div>
+      <div class="subagent-card sa-escalate">
+        <div class="name">escalation</div>
+        <div class="desc">Transfers to a human agent via <code>@utils.escalate</code> when the user requests one or the issue is complex.</div>
+      </div>
+      <div class="subagent-card sa-other">
+        <div class="name">off_topic</div>
+        <div class="desc">Politely declines requests outside dining/reservations. Never answers general knowledge questions.</div>
+      </div>
+      <div class="subagent-card sa-other">
+        <div class="name">ambiguous_question</div>
+        <div class="desc">Asks for clarification when the user's intent is unclear or doesn't match any topic.</div>
+      </div>
+    </div>
+
+    <h3>Apex Actions</h3>
+    <div class="card-grid">
+      <div class="card">
+        <span class="tag tag-apex">Apex</span>
+        <h3>GetRestaurantDetails</h3>
+        <p style="font-size:.82rem;margin:.5rem 0">Looks up a restaurant by <strong>Salesforce Id</strong> (starts with <code>a0</code>) or <strong>partial name</strong> (LIKE match). Returns name, cuisine type, location, opening hours, dietary options, phone, and a pre-formatted summary string.</p>
+        <pre><code><span class="comment">// Accepts Id or name — dispatches correct query</span>
+<span class="kw">if</span> (idOrName.startsWith(<span class="str">'a'</span>)) {
+  <span class="comment">// query by Id</span>
+} <span class="kw">else</span> {
+  <span class="comment">// query by Name LIKE '%term%'</span>
+}</code></pre>
+      </div>
+      <div class="card">
+        <span class="tag tag-apex">Apex</span>
+        <h3>CheckBookingAvailability</h3>
+        <p style="font-size:.82rem;margin:.5rem 0">Given a restaurant Id, requested DateTime, and party size — checks current bookings against the restaurant's capacity and returns availability plus remaining slots.</p>
+        <pre><code><span class="comment">// Counts confirmed + modified bookings</span>
+<span class="comment">// Compares totalBooked + partySize vs capacity</span>
+Integer existing = Database.countQuery(
+  <span class="str">'SELECT COUNT() FROM Booking__c ...'</span>,
+  AccessLevel.<span class="val">SYSTEM_MODE</span>
+);</code></pre>
+      </div>
+      <div class="card">
+        <span class="tag tag-apex">Apex</span>
+        <h3>ModifyOrCancelBooking</h3>
+        <p style="font-size:.82rem;margin:.5rem 0">Accepts a booking Id <em>or</em> booking number (e.g. <code>BKG-0001</code>), and an action string (<code>MODIFY</code> or <code>CANCEL</code>). Updates the record and returns confirmation message with booking number and new status.</p>
+        <pre><code><span class="comment">// Accepts Salesforce Id OR AutoNumber name</span>
+String q = bookId.length() == 18
+  ? <span class="str">'... WHERE Id = :bookId'</span>
+  : <span class="str">'... WHERE Name = :bookId'</span>;
+<span class="fn">Database.query</span>(q, AccessLevel.<span class="val">SYSTEM_MODE</span>);</code></pre>
+      </div>
+      <div class="card">
+        <span class="tag tag-apex">Apex</span>
+        <h3>CreateBooking</h3>
+        <p style="font-size:.82rem;margin:.5rem 0">Creates a new <code>Booking__c</code> record. Looks up the restaurant by partial name (LIKE), validates party size against capacity, inserts the record, and returns the auto-generated booking number (BKG-XXXX) and confirmation message.</p>
+        <pre><code><span class="comment">// Lookup restaurant by partial name</span>
+String searchName = <span class="str">'%'</span> + req.restaurantName + <span class="str">'%'</span>;
+<span class="fn">Database.queryWithBinds</span>(
+  <span class="str">'SELECT Id, Name, Capacity__c FROM Restaurant__c WHERE Name LIKE :searchName'</span>,
+  binds, AccessLevel.<span class="val">SYSTEM_MODE</span>
+);
+<span class="comment">// Insert and return BKG-XXXX number</span></code></pre>
+      </div>
+    </div>
+
+    <h3>Key Design Decisions</h3>
+    <div class="alert alert-warn">
+      <strong>Why SYSTEM_MODE?</strong> The Einstein Agent User is a special Salesforce user that runs agent actions. By default, Apex runs in <strong>user mode</strong>, which applies Field-Level Security (FLS). The Einstein Agent User's FLS profile does not grant access to custom text fields like <code>Location__c</code>, <code>Phone__c</code>, and <code>Opening_Hours__c</code> — causing those fields to return <code>null</code> even though the data exists. Switching to <code>Database.query(..., AccessLevel.SYSTEM_MODE)</code> bypasses FLS and ensures all fields are readable. Object-level access is still controlled by the Permission Set.
+    </div>
+    <div class="alert alert-info" style="margin-top:.6rem">
+      <strong>Why <code>require_user_confirmation: True</code>?</strong> For destructive or irreversible actions (cancel, create), the action definition includes <code>require_user_confirmation: True</code>. This delegates the confirmation prompt to the platform runtime — the LLM does not need to ask "are you sure?" in text, which was causing a pattern where the LLM confirmed verbally but then never called the action. Platform-native confirmation is more reliable and produces a consistent UI.
+    </div>
+  </section>
+
+  <!-- DATA MODEL -->
+  <section id="data-model">
+    <h2>Data Model</h2>
+
+    <h3>Restaurant__c — 5 Records</h3>
+    <table>
+      <thead><tr><th>Name</th><th>Cuisine</th><th>Location</th><th>Hours</th><th>Capacity</th><th>Phone</th></tr></thead>
+      <tbody>
+        <tr><td><strong>La Bella Italia</strong></td><td>Italian</td><td>123 Main St, New York, NY 10001</td><td>Mon-Sun 11am–11pm</td><td>80</td><td>(212) 555-0101</td></tr>
+        <tr><td><strong>Sakura Garden</strong></td><td>Japanese</td><td>456 Oak Ave, New York, NY 10002</td><td>Tue-Sun 12pm–10pm</td><td>60</td><td>(212) 555-0202</td></tr>
+        <tr><td><strong>El Rancho</strong></td><td>Mexican</td><td>789 Elm St, New York, NY 10003</td><td>Mon-Sun 10am–11pm</td><td>100</td><td>(212) 555-0303</td></tr>
+        <tr><td><strong>The Brooklyn Grill</strong></td><td>American</td><td>321 Park Blvd, Brooklyn, NY 11201</td><td>Mon-Sun 11am–12am</td><td>120</td><td>(718) 555-0404</td></tr>
+        <tr><td><strong>Maison Paris</strong></td><td>French</td><td>555 Upper East Side, NY 10021</td><td>Tue-Sun 6pm–11pm</td><td>50</td><td>(212) 555-0505</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:1.5rem">Booking__c — Current State</h3>
+    <table>
+      <thead><tr><th>Booking #</th><th>Customer</th><th>Restaurant</th><th>Date</th><th>Party</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><strong>BKG-0000</strong></td><td>John Smith</td><td>La Bella Italia</td><td>Jun 19, 2026 7:55pm</td><td>4</td><td class="status-confirmed">Confirmed</td></tr>
+        <tr><td><strong>BKG-0001</strong></td><td>Maria Garcia</td><td>Sakura Garden</td><td>Jun 17, 2026 7:55pm</td><td>2</td><td class="status-cancelled">Cancelled</td></tr>
+        <tr><td><strong>BKG-0002</strong></td><td>Platinum VIP Guest</td><td>The Brooklyn Grill</td><td>Jun 18, 2026 7:55pm</td><td>6</td><td class="status-cancelled">Cancelled</td></tr>
+        <tr><td><strong>BKG-0003</strong></td><td>Bob Johnson</td><td>El Rancho</td><td>Jun 21, 2026 7:55pm</td><td>3</td><td class="status-confirmed">Confirmed</td></tr>
+        <tr><td><strong>BKG-0004</strong></td><td>Alice Chen</td><td>Maison Paris</td><td>Jun 23, 2026 7:55pm</td><td>2</td><td class="status-cancelled">Cancelled</td></tr>
+        <tr><td><strong>BKG-0005+</strong></td><td>Created during testing</td><td>La Bella Italia</td><td>varies</td><td>varies</td><td class="status-confirmed">Confirmed</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem">BKG-0001, BKG-0002, and BKG-0004 were cancelled during agent testing sessions. BKG-0005 onward are created by the <code>CreateBooking</code> action during live tests.</p>
+  </section>
+
+  <!-- HOW TO TEST -->
+  <section id="how-to-test">
+    <h2>How to Test</h2>
+
+    <div class="alert alert-info">
+      <strong>Prerequisites:</strong> Salesforce CLI (<code>sf</code>) installed, authenticated to the <code>DinerAgent</code> org, and working directory set to <code>~/Projects/CapstoneAgentforce</code>.
+    </div>
+
+    <h3>Option A — CLI Preview (Programmatic)</h3>
+    <p style="font-size:.875rem;color:var(--muted);margin:.3rem 0 .8rem">Best for testing specific utterances and verifying action invocation. Two commands: <code>start</code> creates a session, <code>send</code> sends messages.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Navigate to the project</strong></p>
+          <pre><code>cd ~/Projects/CapstoneAgentforce</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Start a preview session with live actions</strong></p>
+          <pre><code>sf agent preview start \
+  --use-live-actions \
+  --authoring-bundle Intelligent_Diner_Support_Agent \
+  --target-org DinerAgent \
+  --json</code></pre>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:.4rem">Copy the <code>sessionId</code> from the JSON output — you'll use it in every send command.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Send a message</strong> (flag is <code>-u</code>, not <code>--utterance</code>)</p>
+          <pre><code>sf agent preview send \
+  --authoring-bundle Intelligent_Diner_Support_Agent \
+  --session-id &lt;YOUR_SESSION_ID&gt; \
+  -u "Tell me about La Bella Italia" \
+  --target-org DinerAgent \
+  --json</code></pre>
+          <p style="font-size:.82rem;color:var(--muted);margin-top:.4rem">The agent's response appears under <code>result.messages[0].message</code> in the JSON output.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Verify database changes after a write operation</strong></p>
+          <pre><code>sf data query \
+  --query "SELECT Name, Status__c, Customer_Name__c FROM Booking__c ORDER BY Name" \
+  --target-org DinerAgent \
+  --json</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <h3>Option B — Agentforce Builder UI</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p>Open <strong>Setup → Agentforce Agents</strong> in the sandbox org</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p>Find <strong>Intelligent Diner Support Agent</strong> and click <strong>Open in Builder</strong></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p>Click <strong>Preview</strong> (top right). Enable <strong>Use Live Actions</strong> toggle to hit real Apex.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p>Type a message in the chat panel and observe the agent response and the <strong>Session Trace</strong> on the right — it shows which subagent was selected, which actions were invoked, and the LLM's reasoning.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>Known: confirmation prompt appears twice on cancel.</strong> The subagent instructions and <code>require_user_confirmation: True</code> on the action both trigger a confirmation step. The first "yes" acknowledges the LLM's question; the second triggers the platform-native confirmation and actually calls the Apex action. This is a known redundancy — the action executes correctly on the second confirmation.
+    </div>
+  </section>
+
+  <!-- TEST SCENARIOS -->
+  <section id="test-scenarios">
+    <h2>Test Scenarios</h2>
+    <p style="font-size:.875rem;color:var(--muted);margin-bottom:1.2rem">Five scenarios covering all four capabilities plus scope enforcement. Each shows the expected conversation flow and what to verify in the database.</p>
+
+    <!-- SCENARIO 1 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <span class="title">Scenario 1 — Restaurant Lookup</span>
+        <span class="label">restaurant_info subagent</span>
+      </div>
+      <div class="scenario-body">
+        <div class="chat">
+          <div class="msg user">Tell me about La Bella Italia</div>
+          <div class="msg system">→ Routes to restaurant_info → calls GetRestaurantDetails Apex</div>
+          <div class="msg agent">La Bella Italia is an Italian restaurant located at 123 Main St, New York, NY 10001. Hours: Mon-Sun 11:00 AM - 11:00 PM. Dietary options: Vegetarian, Gluten-Free, Vegan. Phone: (212) 555-0101.</div>
+        </div>
+        <div class="expect">
+          <strong>What to verify:</strong> Response contains real data from the database — location, hours, dietary options, and phone number. Typos in the restaurant name (e.g. "la bela italia") return "not found" — the LIKE match requires approximate spelling.
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO 2 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <span class="title">Scenario 2 — Create a Booking</span>
+        <span class="label">create_booking subagent</span>
+      </div>
+      <div class="scenario-body">
+        <div class="chat">
+          <div class="msg user">I want to book a table at Sakura Garden for 2 people tomorrow at 7pm, my name is Rodolpho</div>
+          <div class="msg system">→ Routes to create_booking → all 4 required fields collected in one message</div>
+          <div class="msg agent">I'm about to book a table for 2 at Sakura Garden for Rodolpho tomorrow at 7:00 PM. Would you like to proceed? Please reply "yes" to confirm or "no" to cancel.</div>
+          <div class="msg user">yes</div>
+          <div class="msg system">→ calls CreateBooking Apex → inserts Booking__c record</div>
+          <div class="msg agent">Reservation confirmed at Sakura Garden! Booking number: BKG-0006. Party of 2 on June 17, 2026 at 7:00 PM.</div>
+        </div>
+        <div class="expect">
+          <strong>What to verify:</strong> A new Booking__c record exists with Status = Confirmed and the correct restaurant, party size, and customer name.<br/>
+          <code>sf data query -q "SELECT Name, Status__c, Customer_Name__c, Restaurant__r.Name FROM Booking__c ORDER BY CreatedDate DESC LIMIT 3" --target-org DinerAgent --json</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO 3 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <span class="title">Scenario 3 — Cancel a Booking</span>
+        <span class="label">cancel_booking subagent</span>
+      </div>
+      <div class="scenario-body">
+        <div class="chat">
+          <div class="msg user">I want to cancel BKG-0003</div>
+          <div class="msg system">→ Routes to cancel_booking → calls cancel_booking_action with require_user_confirmation</div>
+          <div class="msg agent">I'm about to cancel booking BKG-0003. Would you like me to go ahead? Please reply "yes" to confirm or "no" to cancel.</div>
+          <div class="msg user">yes</div>
+          <div class="msg system">→ calls ModifyOrCancelBooking(bookingId='BKG-0003', action='CANCEL')</div>
+          <div class="msg agent">Booking BKG-0003 at El Rancho has been successfully cancelled.</div>
+        </div>
+        <div class="expect">
+          <strong>What to verify:</strong> BKG-0003 should show <code>Status__c = Cancelled</code>.<br/>
+          <code>sf data query -q "SELECT Name, Status__c FROM Booking__c WHERE Name = 'BKG-0003'" --target-org DinerAgent --json</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO 4 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <span class="title">Scenario 4 — Modify a Booking</span>
+        <span class="label">modify_booking subagent</span>
+      </div>
+      <div class="scenario-body">
+        <div class="chat">
+          <div class="msg user">I want to change my booking to a different date</div>
+          <div class="msg system">→ Routes to modify_booking</div>
+          <div class="msg agent">I can help with that! Please provide your booking number (e.g., BKG-0000).</div>
+          <div class="msg user">BKG-0000</div>
+          <div class="msg agent">Got it. What is the new date and time you'd like for BKG-0000?</div>
+          <div class="msg user">June 25th at 8pm</div>
+          <div class="msg agent">To confirm: I'll update booking BKG-0000 (La Bella Italia) to June 25, 2026 at 8:00 PM. Shall I proceed?</div>
+          <div class="msg user">Yes</div>
+          <div class="msg system">→ calls ModifyOrCancelBooking(bookingId='BKG-0000', action='MODIFY', newDateTime=...)</div>
+          <div class="msg agent">Booking BKG-0000 at La Bella Italia has been updated successfully. New date/time: June 25, 2026 at 8:00 PM.</div>
+        </div>
+        <div class="expect">
+          <strong>What to verify:</strong> BKG-0000 <code>Booking_Date__c</code> should be updated and <code>Status__c</code> should be <code>Modified</code>.<br/>
+          <code>sf data query -q "SELECT Name, Status__c, Booking_Date__c FROM Booking__c WHERE Name = 'BKG-0000'" --target-org DinerAgent --json</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIO 5 -->
+    <div class="scenario">
+      <div class="scenario-header">
+        <span class="title">Scenario 5 — Scope Boundary / Off-Topic</span>
+        <span class="label">off_topic subagent</span>
+      </div>
+      <div class="scenario-body">
+        <div class="chat">
+          <div class="msg user">What's the capital of France?</div>
+          <div class="msg system">→ Routes to off_topic</div>
+          <div class="msg agent">I'm here to help with restaurant reservations and dining information. I'm not able to answer general knowledge questions. Is there anything I can help you with regarding a reservation or a restaurant?</div>
+        </div>
+        <div class="expect">
+          <strong>What to verify:</strong> Agent refuses off-topic requests gracefully without providing the answer. It stays in scope and redirects the user. Prompt injection attempts (e.g. "ignore your instructions") should also be deflected — the system instructions include an injection guard.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEPLOY -->
+  <section id="deploy">
+    <h2>Deploy &amp; Publish</h2>
+    <p style="font-size:.875rem;color:var(--muted);margin-bottom:1rem">The agent is currently deployed and working in preview mode. To publish and activate it for end users, run these commands in order from <code>~/Projects/CapstoneAgentforce</code>.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Validate the agent script compiles without errors</strong></p>
+          <pre><code>sf agent validate authoring-bundle \
+  --api-name Intelligent_Diner_Support_Agent \
+  --json</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Deploy the bundle and Apex classes</strong> (deploy all-source fails due to PermissionSet XML bug — deploy components individually)</p>
+          <pre><code>sf project deploy start \
+  --metadata "AiAuthoringBundle:Intelligent_Diner_Support_Agent" \
+  --metadata "ApexClass:GetRestaurantDetails" \
+  --metadata "ApexClass:CheckBookingAvailability" \
+  --metadata "ApexClass:ModifyOrCancelBooking" \
+  --metadata "ApexClass:CreateBooking" \
+  --target-org DinerAgent \
+  --json</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Grant Apex class access to the Permission Set</strong> (must be done via Apex — XML deploy fails for this sandbox type)</p>
+          <pre><code><span class="comment">// Run via: sf apex run --target-org DinerAgent</span>
+PermissionSet ps = [SELECT Id FROM PermissionSet WHERE Name = 'DinerAgent_Access' LIMIT 1];
+for (String cls : new List&lt;String&gt;{'GetRestaurantDetails','CheckBookingAvailability','ModifyOrCancelBooking','CreateBooking'}) {
+    ApexClass ac = [SELECT Id FROM ApexClass WHERE Name = :cls LIMIT 1];
+    insert new SetupEntityAccess(ParentId = ps.Id, SetupEntityId = ac.Id);
+}</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Publish the authoring bundle</strong> — creates a versioned snapshot of the agent</p>
+          <pre><code>sf agent publish authoring-bundle \
+  --api-name Intelligent_Diner_Support_Agent \
+  --json</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Activate the agent</strong> — makes it available to end users</p>
+          <pre><code>sf agent activate \
+  --api-name Intelligent_Diner_Support_Agent \
+  --json</code></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num"></div>
+        <div class="step-content">
+          <p><strong>Verify post-activation</strong> with the published agent (not authoring bundle)</p>
+          <pre><code>sf agent preview start \
+  --api-name Intelligent_Diner_Support_Agent \
+  --json</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert alert-warn">
+      <strong>Important:</strong> Every publish creates a permanent, immutable version number in the org. Only publish when you're ready — do not publish as part of the dev/test loop.
+    </div>
+
+    <h3>What Was Built — File Structure</h3>
+    <pre><code>~/Projects/CapstoneAgentforce/force-app/main/default/
+├── aiAuthoringBundles/
+│   └── Intelligent_Diner_Support_Agent/
+│       ├── Intelligent_Diner_Support_Agent.agent        <span class="comment"># Agent Script source (8 subagents)</span>
+│       └── Intelligent_Diner_Support_Agent.aiAuthoringBundle-meta.xml
+├── classes/
+│   ├── GetRestaurantDetails.cls          <span class="comment"># Restaurant lookup (by Id or partial name)</span>
+│   ├── CheckBookingAvailability.cls      <span class="comment"># Availability check against capacity</span>
+│   ├── ModifyOrCancelBooking.cls         <span class="comment"># Modify/cancel by Id or booking number</span>
+│   └── CreateBooking.cls                 <span class="comment"># Create new Booking__c record</span>
+├── objects/
+│   ├── Restaurant__c/                    <span class="comment"># Custom object: restaurants</span>
+│   └── Booking__c/                       <span class="comment"># Custom object: reservations</span>
+└── permissionsets/
+    └── DinerAgent_Access.permissionset-meta.xml   <span class="comment"># Object access only — Apex access via anonymous Apex</span></code></pre>
+  </section>
+
+</div>
+
+<footer>
+  <strong>Intelligent Diner Support Agent</strong> — FDE Ready in Six Capstone &nbsp;|&nbsp;
+  Org: DinerAgent sandbox &nbsp;|&nbsp;
+  Built with Agentforce Agent Script + Invocable Apex &nbsp;|&nbsp;
+  API Version 66.0
+</footer>
+
+</body>
+</html>
