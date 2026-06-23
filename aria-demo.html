@@ -566,6 +566,7 @@ header p  { font-size: 1rem; opacity: .8; max-width: 620px; margin: 0 auto; }
   <button class="tab-btn" onclick="showTab('code')">📄 Agent Script</button>
   <button class="tab-btn" onclick="showTab('variables')">📦 Variables</button>
   <button class="tab-btn" onclick="showTab('apex')">⚡ Apex Actions</button>
+  <button class="tab-btn" onclick="showTab('policies')">📋 Policies</button>
   <button class="tab-btn" onclick="showTab('execution')">⚙️ Execution Model</button>
 </nav>
 
@@ -731,7 +732,44 @@ header p  { font-size: 1rem; opacity: .8; max-width: 620px; margin: 0 auto; }
 </div>
 
 <!-- ══════════════════════════════════════════════
-     TAB 6: EXECUTION MODEL
+     TAB 6: POLICIES
+══════════════════════════════════════════════ -->
+<div id="tab-policies" class="tab-panel">
+  <h2 class="section-title">Dining Policies</h2>
+  <p style="margin-bottom:1.5rem;color:var(--muted);font-size:.9rem;">All policies are embedded directly in the <code>faq</code> subagent's <code>instructions: -></code> block. The LLM reads them from the resolved prompt in Phase 1 — no Apex action or database lookup required.</p>
+
+  <div class="info-box">💡 <strong>Why static instructions?</strong> For a demo, hardcoding policies in the agent is the fastest path. For production, a <code>GetDiningPolicy</code> Apex action backed by a custom object would allow policies to be updated in Salesforce without redeploying the agent.</div>
+
+  <div class="arch-grid" id="policies-grid"></div>
+
+  <h3 class="section-subtitle">Test these questions</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;margin-bottom:2rem" id="policy-questions"></div>
+
+  <h3 class="section-subtitle">How it works in Agent Script</h3>
+  <div class="code-block" style="border-radius:8px"><pre><span class="kw">subagent</span> <span class="ac">faq</span>:
+    <span class="vr">description</span>: <span class="st">"Answers restaurant info AND policy questions..."</span>
+    <span class="kw">reasoning</span>:
+        <span class="kw">instructions</span>: ->
+            | Help the customer with restaurant information or policy questions.
+            | Use {!@actions.get_restaurant_details} for specific restaurant info.
+            <span class="cm">// ...restaurant action instructions...</span>
+
+            <span class="cm">--- THE DINER POLICIES ---</span>
+
+            <span class="pi">CANCELLATION POLICY:</span>
+            | Reservations may be cancelled free of charge up to 24 hours before booking.
+            | Cancellations under 24h may incur a $15 per guest no-show fee.
+            <span class="cm">// ... more policy text ...</span>
+
+            <span class="pi">GROUP BOOKING POLICY:</span>
+            | Groups of 8+ require a reservation at least 48 hours in advance.
+            <span class="cm">// ...</span></pre></div>
+
+  <div class="warn-box" style="margin-top:1rem">⚠️ The LLM answers policy questions purely from this prompt text — it does NOT call any Apex action. This means policies cannot be updated without redeploying the agent. Consider a <code>GetDiningPolicy</code> Apex action backed by a <code>DiningPolicy__c</code> custom object for production.</div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     TAB 7: EXECUTION MODEL
 ══════════════════════════════════════════════ -->
 <div id="tab-execution" class="tab-panel">
   <h2 class="section-title">Execution Model</h2>
@@ -776,7 +814,7 @@ header p  { font-size: 1rem; opacity: .8; max-width: 620px; margin: 0 auto; }
 
 const SUBAGENTS = [
   { name: "aria_router", icon: "🔀", tags: ["hub", "start_agent"], desc: "Central entry point. Routes every user message to the correct subagent. Contains before_reasoning gates that intercept multi-turn flows (OTP auth, DSAT survey) before the LLM sees the message." },
-  { name: "faq", icon: "💬", tags: ["free", "apex"], desc: "Answers restaurant questions (hours, cuisine, location, dietary). Calls GetRestaurantDetails. No authentication required. Instructs the LLM to echo exact field values to prevent grounding failures." },
+  { name: "faq", icon: "💬", tags: ["free", "apex"], desc: "Answers restaurant questions (hours, cuisine, location, dietary) AND all dining policy questions (cancellation, group bookings, dress code, payment, late arrival, children, pets, special requests). Policies are embedded in the instructions prompt — no Apex needed." },
   { name: "authentication_gate", icon: "📧", tags: ["auth", "apex"], desc: "Step 1 of OTP flow. Asks for the customer's email and immediately calls SendVerificationCode. Sets auth_in_progress = True via after_reasoning so the router redirects the next turn here." },
   { name: "auth_verify_code", icon: "🔑", tags: ["auth", "apex"], desc: "Step 2 of OTP flow. Collects the 6-digit code and calls VerifyOtpCode. On success, sets customer_authenticated = True and transitions to reservation_hub." },
   { name: "reservation_hub", icon: "📋", tags: ["auth"], desc: "Post-auth router. Welcomes the verified customer by name and routes to create, modify, or cancel. Has a defensive before_reasoning gate that bounces unauthenticated users back to authentication_gate." },
@@ -985,6 +1023,21 @@ const CODE_SNIPPETS = {
 
 const SCENARIOS = [
   {
+    id: "policy",
+    icon: "📋",
+    label: "Dining Policies",
+    steps: [
+      { from: "user",  text: "What is your cancellation policy?", subagent: "aria_router → faq", vars: {}, note: "Router recognises policy question → transitions to faq. No Apex action called — LLM answers from the policy text in the instructions prompt." },
+      { from: "agent", text: "You may cancel your reservation free of charge up to 24 hours before your booking time. Cancellations made less than 24 hours in advance may incur a no-show fee of $15 per guest. No-shows without any cancellation will be charged the full no-show fee. You can cancel using this assistant or by calling the restaurant directly.", subagent: "faq", vars: {}, note: "LLM reads cancellation policy from the prompt — zero latency, no action call." },
+      { from: "user",  text: "Can I bring my dog?", subagent: "faq", vars: {}, note: "Still in faq — policy question, no transition." },
+      { from: "agent", text: "Pets are not permitted inside any of The Diner restaurants. However, well-behaved dogs on a leash are welcome on outdoor terraces where available. El Rancho and The Brooklyn Grill have outdoor seating areas that welcome dogs.", subagent: "faq", vars: {}, note: "Pet policy answered from prompt text." },
+      { from: "user",  text: "Do you accept Apple Pay?", subagent: "faq", vars: {}, note: "" },
+      { from: "agent", text: "Yes! Contactless and mobile payments including Apple Pay and Google Pay are accepted at all locations. All major credit and debit cards are also accepted. Cash is accepted at The Brooklyn Grill and El Rancho only.", subagent: "faq", vars: {}, note: "Payment policy answered. No Apex call — pure prompt knowledge." },
+      { from: "user",  text: "I'm coming with a group of 12 people", subagent: "faq", vars: {}, note: "" },
+      { from: "agent", text: "For groups of 12, we require a reservation at least 48 hours in advance and a credit card guarantee. Split billing is available for groups up to 10 — for your group of 12, a single payment is preferred. Would you like to make a reservation?", subagent: "faq", vars: {}, note: "Group booking policy applied. Aria combines two rules: 8+ needs 48h notice, and 10+ needs credit card." },
+    ]
+  },
+  {
     id: "faq",
     icon: "💬",
     label: "Restaurant FAQ",
@@ -1050,6 +1103,32 @@ const PATTERNS = [
   { icon: "🔐", name: "Verification Gate", tag: "architecture", desc: "before_reasoning blocks on protected subagents redirect unauthenticated users. Combined with state flags and router gates to maintain the auth state across turns." },
   { icon: "🔄", name: "Post-Action Loop", tag: "determinism", desc: "run @actions.X at the TOP of instructions: -> fires deterministically in Phase 1. Used for the DSAT log_interaction — ensures the Apex call happens regardless of LLM behaviour." },
   { icon: "🚦", name: "State Flag Redirect", tag: "multi-turn", desc: "after_reasoning: set @variables.flag = True combined with before_reasoning gates in the router. Keeps multi-turn flows (auth, DSAT) intact across turns without relying on the LLM to remember context." },
+];
+
+const POLICIES = [
+  { icon: "❌", title: "Cancellation", color: "var(--sf-red)", rules: ["Free cancellation up to 24 hours before booking", "$15 per guest no-show fee for late cancellations", "No-shows charged the full fee", "Cancel via this assistant or by calling the restaurant"] },
+  { icon: "👥", title: "Group Bookings", color: "var(--sf-blue)", rules: ["Groups of 8+ require 48-hour advance notice", "Credit card guarantee required for 10+", "Group menus may apply for 15+", "Split billing available for up to 10 guests"] },
+  { icon: "👔", title: "Dress Code", color: "var(--sf-purple)", rules: ["Smart casual at all restaurants", "No sleeveless tops, flip-flops, or athletic wear", "Maison Paris: formal — collared shirts required, no jeans", "Children's dress code is relaxed"] },
+  { icon: "💳", title: "Payment Methods", color: "var(--sf-green)", rules: ["Visa, Mastercard, Amex, Discover accepted everywhere", "Apple Pay and Google Pay accepted everywhere", "Cash only at The Brooklyn Grill and El Rancho", "Gift cards accepted everywhere except online bookings"] },
+  { icon: "⏰", title: "Late Arrival", color: "var(--sf-orange)", rules: ["Table held for 15 minutes past booking time", "After 15 min without contact, table may be released", "Message this assistant or call to extend the hold"] },
+  { icon: "👶", title: "Children", color: "var(--sf-teal)", rules: ["Children welcome at all restaurants", "High chairs and booster seats available on request", "Kids menu at La Bella Italia, El Rancho, Brooklyn Grill", "Sakura Garden and Maison Paris accommodate dietary needs"] },
+  { icon: "🐕", title: "Pets", color: "#7d5a00", rules: ["Pets not permitted inside any restaurant", "Dogs on leash welcome on outdoor terraces", "Outdoor seating with dogs: El Rancho and The Brooklyn Grill"] },
+  { icon: "🎂", title: "Special Requests", color: "var(--sf-blue)", rules: ["Note dietary restrictions and allergies at booking", "Severe allergies: contact restaurant directly before visiting", "Birthday/anniversary setup available with 24h notice", "Seating preferences accommodated when possible"] },
+];
+
+const POLICY_QUESTIONS = [
+  "What is your cancellation policy?",
+  "Can I bring my dog?",
+  "Do you take Apple Pay?",
+  "I'm coming with 12 people",
+  "What happens if I arrive 20 minutes late?",
+  "Do you have a dress code?",
+  "Is there a children's menu?",
+  "Can I have a birthday setup?",
+  "Do you accept cash?",
+  "What if I need to cancel last minute?",
+  "Can I split the bill with my group?",
+  "Are you able to accommodate a gluten-free allergy?",
 ];
 
 // ─────────────────────────────────────────────────
@@ -1227,6 +1306,22 @@ function nextStep() {
 // ─────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────
+function renderPolicies() {
+  document.getElementById('policies-grid').innerHTML = POLICIES.map(p => `
+    <div class="arch-card" style="border-left-color:${p.color}">
+      <h3>${p.icon} ${p.title}</h3>
+      <ul style="padding-left:1rem;font-size:.82rem;color:var(--muted)">
+        ${p.rules.map(r => `<li style="margin-bottom:.3rem">${r}</li>`).join('')}
+      </ul>
+      <span class="tag free">from instructions</span>
+    </div>`).join('');
+
+  document.getElementById('policy-questions').innerHTML = POLICY_QUESTIONS.map(q => `
+    <div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;font-size:.83rem;display:flex;align-items:center;gap:.5rem">
+      <span style="color:var(--sf-teal)">💬</span> "${q}"
+    </div>`).join('');
+}
+
 renderArch();
 renderCode();
 renderVarSection('var-auth',   VARIABLES.auth);
@@ -1235,6 +1330,7 @@ renderVarSection('var-res',    VARIABLES.res);
 renderVarSection('var-dsat',   VARIABLES.dsat);
 renderVarSection('var-linked', VARIABLES.linked);
 renderApex();
+renderPolicies();
 renderExecution();
 renderScenarioBtns();
 </script>
