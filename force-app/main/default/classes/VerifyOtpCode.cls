@@ -40,8 +40,8 @@ public class VerifyOtpCode {
             DateTime now = DateTime.now();
 
             List<OtpVerification__c> otps = Database.queryWithBinds(
-                'SELECT Id, Code__c, ExpiresAt__c, Used__c FROM OtpVerification__c ' +
-                'WHERE Email__c = :emailVal AND Used__c = false ' +
+                'SELECT Id, Code__c, ExpiresAt__c, Is_Used__c FROM OtpVerification__c ' +
+                'WHERE Email__c = :emailVal AND Is_Used__c = false ' +
                 'ORDER BY CreatedDate DESC LIMIT 1',
                 new Map<String, Object>{ 'emailVal' => emailVal },
                 AccessLevel.SYSTEM_MODE
@@ -57,7 +57,7 @@ public class VerifyOtpCode {
             OtpVerification__c otp = otps[0];
 
             if (otp.ExpiresAt__c < now) {
-                otp.Used__c = true;
+                otp.Is_Used__c = true;
                 update otp;
                 res.verified = false;
                 res.errorMessage = 'Your verification code has expired. Please request a new one.';
@@ -73,7 +73,7 @@ public class VerifyOtpCode {
             }
 
             // Mark as used
-            otp.Used__c = true;
+            otp.Is_Used__c = true;
             update otp;
 
             List<Contact> contacts = Database.queryWithBinds(

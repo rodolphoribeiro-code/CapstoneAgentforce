@@ -56,12 +56,12 @@ public class SendVerificationCode {
 
             // Expire old codes for this email
             List<OtpVerification__c> old = Database.queryWithBinds(
-                'SELECT Id FROM OtpVerification__c WHERE Email__c = :emailVal AND Used__c = false',
+                'SELECT Id FROM OtpVerification__c WHERE Email__c = :emailVal AND Is_Used__c = false',
                 new Map<String, Object>{ 'emailVal' => emailVal },
                 AccessLevel.SYSTEM_MODE
             );
             if (!old.isEmpty()) {
-                for (OtpVerification__c o : old) { o.Used__c = true; }
+                for (OtpVerification__c o : old) { o.Is_Used__c = true; }
                 update old;
             }
 
@@ -70,7 +70,7 @@ public class SendVerificationCode {
                 Email__c = emailVal,
                 Code__c = codeStr,
                 ExpiresAt__c = DateTime.now().addMinutes(5),
-                Used__c = false
+                Is_Used__c = false
             );
 
             // Send real email
