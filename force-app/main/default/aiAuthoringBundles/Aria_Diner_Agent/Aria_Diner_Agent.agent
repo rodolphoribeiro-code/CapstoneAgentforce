@@ -439,10 +439,12 @@ subagent create_reservation:
         instructions: ->
             | Help the customer make a reservation. Collect: restaurant name, date, time, party size, customer name, and email.
               If already authenticated, use {!@variables.customer_email} and {!@variables.customer_name}.
-              Once you have all required details, call {!@actions.create_booking} directly — no need to check availability first.
-              Do NOT ask for confirmation before calling — call the action as soon as you have all inputs.
-              Do NOT say "I'm going to book" or "Would you like me to proceed" — just call the action.
-              After the booking is created, tell the customer their booking number from the result.
+              IMPORTANT: bookingDateTime must be an absolute ISO 8601 datetime like 2026-07-30T19:00:00.
+              Convert relative dates immediately: "tomorrow" = today + 1 day, "next Friday" = calculate the date.
+              Today's date is available in your context. Always resolve to a full datetime before calling the action.
+              Once you have all required details, call {!@actions.create_booking} directly.
+              Do NOT ask for confirmation — call the action as soon as you have all inputs.
+              Do NOT say "being processed" or "I'm going to book" — call the action and report the booking number.
               Do NOT use the show_command tool. Always compose your response as direct text.
 
         actions:
