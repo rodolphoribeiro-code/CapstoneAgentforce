@@ -396,12 +396,23 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); }
 // ARIA INTEGRATION
 // ─────────────────────────────────────────────
 function openAria(msg) {
-  // When Messaging for Web snippet is wired, this triggers the chat widget.
-  // For now, show a prompt that the user can copy to the Aria agent.
-  if (typeof embeddedservice_bootstrap !== 'undefined') {
-    embeddedservice_bootstrap.utilAPI.launchChat();
-  } else {
-    alert('💬 To chat with Aria, the Messaging for Web snippet needs to be wired in the HTML.\n\nIn the meantime, test via Salesforce Agent Builder!');
+  try {
+    if (typeof embeddedservice_bootstrap !== 'undefined' &&
+        embeddedservice_bootstrap.utilAPI &&
+        typeof embeddedservice_bootstrap.utilAPI.launchChat === 'function') {
+      embeddedservice_bootstrap.utilAPI.launchChat();
+    } else {
+      // Widget still loading or CORS not yet configured — retry after short delay
+      setTimeout(() => {
+        if (typeof embeddedservice_bootstrap !== 'undefined' &&
+            embeddedservice_bootstrap.utilAPI &&
+            typeof embeddedservice_bootstrap.utilAPI.launchChat === 'function') {
+          embeddedservice_bootstrap.utilAPI.launchChat();
+        }
+      }, 1500);
+    }
+  } catch(e) {
+    console.warn('Aria widget not ready:', e);
   }
 }
 

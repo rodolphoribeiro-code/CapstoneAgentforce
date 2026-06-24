@@ -28,6 +28,10 @@ variables:
         description: "Salesforce Id of the restaurant selected by the customer"
     escalation_reason: mutable string = ""
         description: "Reason for escalating to a human agent"
+    case_created: mutable boolean = False
+        description: "True after a Service Cloud Case has been created for this escalation"
+    case_number: mutable string = ""
+        description: "Case number returned by CreateServiceCase"
     dsat_collected: mutable boolean = False
         description: "True after the DSAT rating has been collected and logged"
     dsat_score: mutable string = ""
@@ -688,19 +692,33 @@ subagent escalation:
     description: "Handles escalation to a human agent. Creates a Service Cloud case and transfers the customer via messaging channel."
     reasoning:
         instructions: ->
-            | Of course! Let me get a person on this. Quickly ask what they need help with if not already known.
-              Use {!@actions.create_case} to log it, then share the caseNumber so they have a reference.
-              Then use {!@actions.connect_to_human} to hand them over.
-              Do NOT use the show_command tool. Always write your response as direct text.
+            if @variables.case_created == False:
+                run @actions.create_case
+                    with contactId = @variables.customer_contact_id
+                    with reason = "Customer escalation"
+                    with description = "Customer requested to speak with a human agent."
+                    set @variables.case_created = @outputs.success
+                    set @variables.case_number = @outputs.caseNumber
+
+            if @variables.case_created == True:
+                | Your support case {!@variables.case_number} has been created.
+                  Let me connect you with a team member right away!
+
+            if @variables.case_created == False:
+                | Connecting you with our team now!
 
         actions:
             create_case: @actions.create_case
-                description: "Create a Service Cloud case to document the escalation reason"
+                description: "REQUIRED FIRST STEP: log a support case before transferring. Always call this before connect_to_human."
                 with contactId = @variables.customer_contact_id
                 with reason = @variables.escalation_reason
                 with description = ...
+                set @variables.case_created = @outputs.success
+                set @variables.case_number = @outputs.caseNumber
+                available when @variables.case_created == False
             connect_to_human: @utils.escalate
-                description: "Transfer the customer to a live human agent"
+                description: "Transfer to a live human agent — only after the case has been created"
+                available when @variables.case_created == True
 
     actions:
         create_case:
