@@ -119,17 +119,19 @@ start_agent aria_router:
                 description: "Customer is asking about something outside the scope of The Diner"
 
 subagent faq:
-    description: "Answers questions about restaurants (hours, cuisine, location, dietary options) AND all dining policy questions (cancellation, group bookings, dress code, payment, late arrival, children, pets, special requests). No authentication required."
+    description: "Answers questions about restaurants (hours, cuisine, location, dietary options), recommends restaurants by city or cuisine, AND handles all dining policy questions (cancellation, group bookings, dress code, payment, late arrival, children, pets, special requests). No authentication required."
     reasoning:
         instructions: ->
-            | Help the customer with restaurant information or policy questions.
-              Use the {!@actions.get_restaurant_details} action when the customer asks about a specific restaurant.
-              After receiving results, write your response as direct text. Include the restaurantName, cuisineType,
-              location, openingHours, dietaryOptions, phone, and summary fields from the action output.
-              Use the exact values returned — do NOT paraphrase or invent information.
-              Do NOT call the action again after you have received results.
+            | Help the customer with restaurant information, recommendations, or policy questions.
+              Use {!@actions.get_restaurant_details} when the customer asks about ONE specific restaurant by name.
+              Use {!@actions.search_restaurants} when the customer asks for recommendations, searches by city,
+              cuisine type, or dietary option (e.g. "restaurants in San Francisco", "Italian food in Paris",
+              "vegan options in London", "what do you have in Sao Paulo").
+              After receiving results, write your response as direct text using the exact values returned.
+              Do NOT invent or paraphrase information.
+              Do NOT call the same action twice in the same turn.
               Do NOT use the show_command tool. Always compose your response as direct text.
-              When done, offer to help with anything else.
+              When done, offer to help with a reservation or anything else.
 
               --- THE DINER POLICIES ---
 
@@ -186,9 +188,12 @@ subagent faq:
 
         actions:
             get_restaurant_details: @actions.get_restaurant_details
-                description: "Get details about a specific restaurant by name or ID"
+                description: "Get full details about ONE specific restaurant by name or ID"
                 with restaurantIdOrName = ...
                 set @variables.restaurant_id = @outputs.restaurantId
+            search_restaurants: @actions.search_restaurants
+                description: "Search or recommend restaurants by city, cuisine type, dietary option, or any keyword — use when the customer asks for options or recommendations rather than one specific place"
+                with query = ...
             go_back: @utils.transition to @subagent.aria_router
                 description: "Customer has no more restaurant questions or wants to do something else"
 
@@ -220,6 +225,23 @@ subagent faq:
                 phone: string
                     filter_from_agent: False
                 summary: string
+                    filter_from_agent: False
+        search_restaurants:
+            target: "apex://SearchRestaurants"
+            description: "Search restaurants by city, cuisine, name, or dietary option and return a formatted list"
+            inputs:
+                query: string
+                    description: "City, cuisine type, restaurant name, or dietary option to search for"
+                    is_required: True
+            outputs:
+                found: boolean
+                    filter_from_agent: True
+                totalResults: object
+                    complex_data_type_name: "lightning__integerType"
+                    filter_from_agent: True
+                resultsSummary: string
+                    filter_from_agent: False
+                noResultsMessage: string
                     filter_from_agent: False
 
 subagent authentication_gate:
