@@ -721,7 +721,9 @@ subagent escalation:
                     set @variables.case_number = @outputs.caseNumber
 
             if @variables.case_created == True:
-                | Done! Your support case {!@variables.case_number} has been logged and our team will reach out to you shortly.
+                | Done! Your support case has been logged successfully.
+                  Case number: {!@variables.case_number}
+                  Our support team will reach out to you within the next hour to help resolve your issue.
                   Is there anything else I can help you with in the meantime?
 
             if @variables.case_created == False:

@@ -39,7 +39,7 @@ public without sharing class GetMyReservations {
                 'FROM Booking__c ' +
                 'WHERE Customer_Email__c = :emailVal ' +
                 'ORDER BY Booking_Date__c DESC ' +
-                'LIMIT 10',
+                'LIMIT 20',
                 new Map<String, Object>{ 'emailVal' => emailVal },
                 AccessLevel.SYSTEM_MODE
             );
@@ -55,20 +55,41 @@ public without sharing class GetMyReservations {
             res.found = true;
             res.totalCount = bookings.size();
 
-            String summary = 'You have ' + bookings.size() + ' reservation' + (bookings.size() > 1 ? 's' : '') + ':\n\n';
-            Integer i = 1;
+            // Split into upcoming and past
+            DateTime now = DateTime.now();
+            List<Booking__c> upcoming = new List<Booking__c>();
+            List<Booking__c> past = new List<Booking__c>();
             for (Booking__c b : bookings) {
-                String restaurant = b.Restaurant__r != null ? b.Restaurant__r.Name : 'Unknown';
-                String dateStr = b.Booking_Date__c != null ? b.Booking_Date__c.format('MMMM d, yyyy') : 'TBD';
-                String timeStr = b.Booking_Date__c != null ? b.Booking_Date__c.format('h:mm a') : '';
-                summary += i + '. ' + b.Name + ' — ' + restaurant + '\n';
-                summary += '   Date: ' + dateStr + ' at ' + timeStr + '\n';
-                summary += '   Guests: ' + Integer.valueOf(b.Party_Size__c) + ' | Status: ' + b.Status__c + '\n';
-                if (String.isNotBlank(b.Special_Requests__c)) {
-                    summary += '   Requests: ' + b.Special_Requests__c + '\n';
+                if (b.Booking_Date__c != null && b.Booking_Date__c >= now && b.Status__c != 'Cancelled') {
+                    upcoming.add(b);
+                } else {
+                    past.add(b);
+                }
+            }
+
+            String summary = 'You have ' + bookings.size() + ' reservation' + (bookings.size() > 1 ? 's' : '') + ' total.\n\n';
+
+            if (!upcoming.isEmpty()) {
+                summary += '--- UPCOMING (' + upcoming.size() + ') ---\n';
+                for (Booking__c b : upcoming) {
+                    String restaurant = b.Restaurant__r != null ? b.Restaurant__r.Name : 'Unknown';
+                    String dateStr = b.Booking_Date__c != null ? b.Booking_Date__c.format('MMMM d, yyyy') : 'TBD';
+                    String timeStr = b.Booking_Date__c != null ? b.Booking_Date__c.format('h:mm a') : '';
+                    summary += b.Name + ' - ' + restaurant + ' | ' + dateStr + ' at ' + timeStr + ' | ' + Integer.valueOf(b.Party_Size__c) + ' guests\n';
+                    if (String.isNotBlank(b.Special_Requests__c)) {
+                        summary += '   Special: ' + b.Special_Requests__c + '\n';
+                    }
                 }
                 summary += '\n';
-                i++;
+            }
+
+            if (!past.isEmpty()) {
+                summary += '--- PAST / CANCELLED (' + past.size() + ') ---\n';
+                for (Booking__c b : past) {
+                    String restaurant = b.Restaurant__r != null ? b.Restaurant__r.Name : 'Unknown';
+                    String dateStr = b.Booking_Date__c != null ? b.Booking_Date__c.format('MMMM d, yyyy') : 'TBD';
+                    summary += b.Name + ' - ' + restaurant + ' | ' + dateStr + ' | ' + b.Status__c + '\n';
+                }
             }
 
             res.reservationsSummary = summary.trim();
