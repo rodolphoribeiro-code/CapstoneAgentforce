@@ -71,6 +71,11 @@ variables:
         source: @MessagingSession.EndUserLanguage
         description: "Messaging end user language"
 
+knowledge:
+    rag_feature_config_id: "ARFPC_1JDWC00000045U94AI"
+    citations_enabled: True
+    citations_url: ""
+
 language:
     default_locale: "en_US"
     additional_locales: ""
@@ -127,64 +132,15 @@ subagent faq:
               Use {!@actions.search_restaurants} when the customer asks for recommendations, searches by city,
               cuisine type, or dietary option (e.g. "restaurants in San Francisco", "Italian food in Paris",
               "vegan options in London", "what do you have in Sao Paulo").
-              After receiving results, write your response as direct text using the exact values returned.
-              Do NOT invent or paraphrase information.
+              Use {!@actions.AnswerQuestionsWithKnowledge} when the customer asks about ANY dining policy
+              (cancellation, group bookings, dress code, payment, late arrival, children, pets,
+              special requests, VIP program, reservation modifications).
+              ALWAYS call {!@actions.AnswerQuestionsWithKnowledge} for policy questions — do NOT answer from memory.
+              After the action returns, write your response using the knowledgeSummary content.
+              After receiving results from any action, write your response as direct text using the exact values returned.
               Do NOT call the same action twice in the same turn.
               Do NOT use the show_command tool. Always compose your response as direct text.
               When done, offer to help with a reservation or anything else.
-
-              --- THE DINER POLICIES ---
-
-              CANCELLATION POLICY:
-              Reservations may be cancelled free of charge up to 24 hours before the booking time.
-              Cancellations made less than 24 hours in advance may incur a no-show fee of $15 per guest.
-              To cancel, customers can use this assistant or call the restaurant directly.
-              No-shows without any cancellation will be charged the full no-show fee.
-
-              GROUP BOOKING POLICY:
-              Groups of 8 or more are considered large groups and require a reservation at least 48 hours in advance.
-              A credit card guarantee is required for groups of 10 or more.
-              Group menus may be required for parties of 15 or more — contact the restaurant directly.
-              Split billing is available for groups up to 10. For larger groups, a single payment is preferred.
-
-              DRESS CODE:
-              Smart casual attire is expected at all The Diner restaurants.
-              Sleeveless tops, flip-flops, and athletic wear are not permitted in the dining room.
-              Maison Paris has a formal dress code: collared shirts required for gentlemen; no jeans.
-              Children's dress code is relaxed — smart casual is appreciated but not strictly enforced.
-
-              PAYMENT METHODS:
-              All major credit and debit cards are accepted (Visa, Mastercard, Amex, Discover).
-              Contactless and mobile payments (Apple Pay, Google Pay) are accepted at all locations.
-              Cash is accepted at The Brooklyn Grill and El Rancho only.
-              Gift cards are accepted at all locations. Gift cards cannot be used for online bookings.
-
-              LATE ARRIVAL POLICY:
-              Reservations are held for 15 minutes past the booking time.
-              After 15 minutes without contact, the table may be released to walk-in customers.
-              If running late, customers should call the restaurant or message this assistant to extend the hold.
-
-              CHILDREN POLICY:
-              Children are welcome at all The Diner restaurants.
-              High chairs and booster seats are available — please request when booking.
-              A children's menu is available at La Bella Italia, El Rancho, and The Brooklyn Grill.
-              Sakura Garden and Maison Paris do not offer a dedicated children's menu but can accommodate dietary needs.
-
-              PET POLICY:
-              Pets are not permitted inside any of The Diner restaurants.
-              Well-behaved dogs on a leash are welcome on outdoor terraces where available.
-              El Rancho and The Brooklyn Grill have outdoor seating areas that welcome dogs.
-
-              SPECIAL REQUESTS AND DIETARY NEEDS:
-              Special requests (dietary restrictions, allergies, seating preferences, celebrations) should be noted at booking time.
-              All restaurants can accommodate vegetarian and gluten-free requirements with advance notice.
-              For severe allergies, customers should contact the restaurant directly before arriving.
-              Birthday or anniversary setups (candles, decorations) are available with 24-hour advance notice.
-
-              RESERVATION MODIFICATIONS:
-              Reservations can be modified up to 2 hours before the booking time at no charge.
-              Party size changes of more than 4 guests require 24-hour notice.
-              Restaurant changes are treated as a cancellation and new booking — cancellation policy applies.
 
         actions:
             get_restaurant_details: @actions.get_restaurant_details
@@ -194,6 +150,12 @@ subagent faq:
             search_restaurants: @actions.search_restaurants
                 description: "Search or recommend restaurants by city, cuisine type, dietary option, or any keyword — use when the customer asks for options or recommendations rather than one specific place"
                 with query = ...
+            AnswerQuestionsWithKnowledge: @actions.AnswerQuestionsWithKnowledge
+                description: "Answer any dining policy question using the official policy document — use for cancellation, group bookings, dress code, payment, late arrival, children, pets, special requests, VIP program"
+                with query = ...
+                with citationsUrl = ...
+                with ragFeatureConfigId = ...
+                with citationsEnabled = ...
             go_back: @utils.transition to @subagent.aria_router
                 description: "Customer has no more restaurant questions or wants to do something else"
 
@@ -226,6 +188,48 @@ subagent faq:
                     filter_from_agent: False
                 summary: string
                     filter_from_agent: False
+        AnswerQuestionsWithKnowledge:
+            description: "Answers questions about dining policies by searching the official policy document."
+            inputs:
+                query: string
+                    description: "Required. The customer's policy question to search for."
+                    label: "Query"
+                    is_required: True
+                    is_user_input: True
+                citationsUrl: string = @knowledge.citations_url
+                    description: "The URL to use for citations."
+                    label: "Citations Url"
+                    is_required: False
+                    is_user_input: True
+                ragFeatureConfigId: string = @knowledge.rag_feature_config_id
+                    description: "The RAG Feature ID for grounding."
+                    label: "RAG Feature Configuration Id"
+                    is_required: False
+                    is_user_input: True
+                citationsEnabled: boolean = @knowledge.citations_enabled
+                    description: "Whether citations are enabled."
+                    label: "Citations Enabled"
+                    is_required: False
+                    is_user_input: True
+            outputs:
+                knowledgeSummary: object
+                    description: "Summary of information retrieved from the policy document."
+                    label: "Knowledge Summary"
+                    complex_data_type_name: "lightning__richTextType"
+                    filter_from_agent: False
+                    is_displayable: True
+                citationSources: object
+                    description: "Source links for the retrieved chunks."
+                    label: "Citation Sources"
+                    complex_data_type_name: "@apexClassType/AiCopilot__GenAiCitationInput"
+                    filter_from_agent: False
+                    is_displayable: False
+            target: "standardInvocableAction://streamKnowledgeSearch"
+            label: "Answer Questions with Knowledge"
+            require_user_confirmation: False
+            include_in_progress_indicator: True
+            progress_indicator_message: "Searching policy guide..."
+            source: "EmployeeCopilot__AnswerQuestionsWithKnowledge"
         search_restaurants:
             target: "apex://SearchRestaurants"
             description: "Search restaurants by city, cuisine, name, or dietary option and return a formatted list"

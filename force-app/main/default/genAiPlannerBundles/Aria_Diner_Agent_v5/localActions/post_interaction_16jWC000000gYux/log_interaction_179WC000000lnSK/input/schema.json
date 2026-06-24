@@ -1,0 +1,42 @@
+{
+  "required" : [ "dsatScore", "interactionType" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "bookingNumber" : {
+      "title" : "Booking Number",
+      "description" : "Booking number from this session (optional)",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "contactId" : {
+      "title" : "Contact Id",
+      "description" : "Salesforce Contact Id of the customer (optional)",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "dsatScore" : {
+      "title" : "Dsat Score",
+      "description" : "Customer satisfaction rating 1 to 5",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "interactionType" : {
+      "title" : "Interaction Type",
+      "description" : "Type: BOOKING_CREATED, BOOKING_MODIFIED, BOOKING_CANCELLED, FAQ, ESCALATION, or GENERAL",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "notes" : {
+      "title" : "Notes",
+      "description" : "Optional notes or comments from the customer",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}

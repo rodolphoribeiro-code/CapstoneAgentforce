@@ -1,0 +1,39 @@
+{
+  "required" : [ "query" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "query" : {
+      "title" : "Query",
+      "description" : "Required. The customer's policy question to search for.",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "citationsUrl" : {
+      "title" : "Citations Url",
+      "description" : "The URL to use for citations.",
+      "const" : "",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "ragFeatureConfigId" : {
+      "title" : "RAG Feature Configuration Id",
+      "description" : "The RAG Feature ID for grounding.",
+      "const" : "ARFPC_1JDWC00000045U94AI_399e2b1a_c43d_4700_9966_9b5be54d0606",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    },
+    "citationsEnabled" : {
+      "title" : "Citations Enabled",
+      "description" : "Whether citations are enabled.",
+      "const" : true,
+      "lightning:type" : "lightning__booleanType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : true
+    }
+  },
+  "lightning:type" : "lightning__objectType",
+  "lightning:textIndexed" : true
+}
