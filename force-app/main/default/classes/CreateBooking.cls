@@ -137,10 +137,18 @@ public without sharing class CreateBooking {
                         'The Diner Restaurant Group — See you soon! 🍽️</div>' +
                         '</div>'
                     );
-                    Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
+                    Messaging.SendEmailResult[] emailResults = Messaging.sendEmail(new List<Messaging.SingleEmailMessage>{ mail });
+                    for (Messaging.SendEmailResult er : emailResults) {
+                        if (!er.isSuccess()) {
+                            for (Messaging.SendEmailError err : er.getErrors()) {
+                                System.debug('Email error: ' + err.getStatusCode() + ' - ' + err.getMessage());
+                            }
+                        } else {
+                            System.debug('Booking confirmation email sent to: ' + emailVal);
+                        }
+                    }
                 } catch (Exception e) {
-                    // Email failure should not block booking confirmation
-                    System.debug('Booking confirmation email failed: ' + e.getMessage());
+                    System.debug('Booking confirmation email exception: ' + e.getMessage());
                 }
             }
 
