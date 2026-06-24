@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>The Diner — Find Your Table</title>
+<style>
+:root{
+  --brand:#c8a96e;
+  --dark:#1a1a1a;
+  --card:#ffffff;
+  --bg:#f7f5f0;
+  --border:#e8e0d0;
+  --text:#2d2d2d;
+  --muted:#7a7060;
+  --green:#2d7a4e;
+  --radius:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+
+/* ── NAV ── */
+nav{background:var(--dark);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.4)}
+.nav-logo{display:flex;align-items:center;gap:.6rem;padding:1rem 0;text-decoration:none}
+.nav-logo span{font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:.02em}
+.nav-logo em{color:var(--brand);font-style:normal}
+.nav-links{display:flex;gap:1.5rem;align-items:center}
+.nav-links a{color:rgba(255,255,255,.7);text-decoration:none;font-size:.875rem;transition:color .2s}
+.nav-links a:hover{color:#fff}
+.nav-cta{background:var(--brand);color:var(--dark)!important;font-weight:700;padding:.5rem 1.1rem;border-radius:20px}
+.nav-cta:hover{background:#d4b77e!important}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--dark) 0%,#2a1a0a 100%);padding:5rem 2rem 4rem;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c8a96e' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;color:#fff;margin-bottom:1rem;position:relative}
+.hero h1 em{color:var(--brand);font-style:normal}
+.hero p{font-size:1.1rem;color:rgba(255,255,255,.65);max-width:560px;margin:0 auto 2rem;position:relative}
+
+/* search bar */
+.search-bar{display:flex;gap:.5rem;max-width:640px;margin:0 auto;position:relative;flex-wrap:wrap}
+.search-bar input,.search-bar select{flex:1;min-width:160px;padding:.75rem 1rem;border:none;border-radius:8px;font-size:.95rem;background:#fff;color:var(--text);outline:none}
+.search-bar select{cursor:pointer}
+.search-btn{background:var(--brand);color:var(--dark);border:none;border-radius:8px;padding:.75rem 1.5rem;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .2s;white-space:nowrap}
+.search-btn:hover{background:#d4b77e}
+
+/* stats */
+.stats{display:flex;justify-content:center;gap:2.5rem;margin-top:2.5rem;flex-wrap:wrap;position:relative}
+.stat{text-align:center}
+.stat strong{display:block;font-size:1.6rem;font-weight:800;color:var(--brand)}
+.stat span{font-size:.8rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em}
+
+/* ── SECTION ── */
+.section{padding:3rem 2rem;max-width:1280px;margin:0 auto}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;gap:1rem;flex-wrap:wrap}
+.section-header h2{font-size:1.5rem;font-weight:700;color:var(--dark)}
+.section-header p{font-size:.875rem;color:var(--muted)}
+.filter-chips{display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{background:#fff;border:1px solid var(--border);border-radius:20px;padding:.35rem .9rem;font-size:.8rem;cursor:pointer;transition:all .2s;white-space:nowrap;color:var(--muted)}
+.chip:hover,.chip.active{background:var(--brand);border-color:var(--brand);color:var(--dark);font-weight:600}
+
+/* ── RESTAURANT GRID ── */
+.restaurant-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:pointer}
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 30px rgba(0,0,0,.1)}
+.card-img{height:180px;display:flex;align-items:center;justify-content:center;font-size:3.5rem;position:relative;overflow:hidden}
+.card-body{padding:1.25rem}
+.card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.5rem;gap:.5rem}
+.card-name{font-size:1rem;font-weight:700;color:var(--dark)}
+.cuisine-tag{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:.2rem .6rem;font-size:.72rem;color:var(--muted);white-space:nowrap}
+.card-location{font-size:.8rem;color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;gap:.3rem}
+.card-meta{display:flex;gap:.75rem;font-size:.78rem;color:var(--muted);margin-bottom:.75rem;flex-wrap:wrap}
+.card-meta span{display:flex;align-items:center;gap:.25rem}
+.dietary-tags{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:1rem}
+.diet-tag{background:#e8f5ee;color:var(--green);border-radius:4px;padding:.15rem .45rem;font-size:.7rem;font-weight:600}
+.card-actions{display:flex;gap:.5rem}
+.btn-book{flex:1;background:var(--dark);color:#fff;border:none;border-radius:8px;padding:.6rem;font-size:.875rem;font-weight:600;cursor:pointer;transition:background .2s}
+.btn-book:hover{background:#333}
+.btn-info{background:transparent;border:1px solid var(--border);border-radius:8px;padding:.6rem .8rem;cursor:pointer;font-size:.875rem;color:var(--muted);transition:all .2s}
+.btn-info:hover{border-color:var(--brand);color:var(--brand)}
+
+/* city section heading */
+.city-section{margin-bottom:2rem}
+.city-label{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem}
+.city-label h3{font-size:1rem;font-weight:700;color:var(--dark)}
+.city-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:90vh;overflow-y:auto;animation:slideUp .25s ease}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:1.5rem 1.5rem 0;display:flex;align-items:flex-start;justify-content:space-between;gap:1rem}
+.modal-header h2{font-size:1.25rem;font-weight:700}
+.modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--muted);line-height:1;padding:.25rem}
+.modal-body{padding:1rem 1.5rem 1.5rem}
+.modal-emoji{font-size:4rem;text-align:center;margin-bottom:1rem}
+.modal-detail{display:grid;gap:.6rem;margin-bottom:1.25rem}
+.modal-row{display:flex;gap:.75rem;font-size:.875rem}
+.modal-row strong{min-width:90px;color:var(--muted)}
+.modal-row span{color:var(--text)}
+.modal-btn{width:100%;background:var(--dark);color:#fff;border:none;border-radius:10px;padding:.9rem;font-size:1rem;font-weight:700;cursor:pointer;transition:background .2s}
+.modal-btn:hover{background:#333}
+
+/* ── FOOTER ── */
+footer{background:var(--dark);color:rgba(255,255,255,.5);text-align:center;padding:2rem;font-size:.8rem;margin-top:3rem}
+footer strong{color:var(--brand)}
+
+/* no results */
+.no-results{text-align:center;padding:3rem;color:var(--muted);grid-column:1/-1}
+.no-results .emoji{font-size:3rem;margin-bottom:.75rem}
+
+/* responsive */
+@media(max-width:600px){
+  .section{padding:2rem 1rem}
+  .restaurant-grid{grid-template-columns:1fr}
+  nav{padding:0 1rem}
+  .nav-links{gap:.75rem}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo"><span>The <em>Diner</em></span></a>
+  <div class="nav-links">
+    <a href="#restaurants">Restaurants</a>
+    <a href="#" onclick="openAria()" class="nav-cta">Book with Aria ✨</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Find your next <em>great meal</em></h1>
+  <p>20 handpicked restaurants across 8 cities — or just ask Aria and she'll sort it out for you.</p>
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Restaurant, city, or cuisine..." oninput="filterRestaurants()"/>
+    <select id="cuisine-filter" onchange="filterRestaurants()">
+      <option value="">All cuisines</option>
+    </select>
+    <select id="city-filter" onchange="filterRestaurants()">
+      <option value="">All cities</option>
+    </select>
+    <button class="search-btn" onclick="filterRestaurants()">Search</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><strong>20</strong><span>Restaurants</span></div>
+    <div class="stat"><strong>8</strong><span>Cities</span></div>
+    <div class="stat"><strong>10+</strong><span>Cuisines</span></div>
+    <div class="stat"><strong>Aria</strong><span>Your AI Host</span></div>
+  </div>
+</div>
+
+<!-- DIETARY FILTER -->
+<div class="section" style="padding-bottom:0">
+  <div class="filter-chips" id="diet-chips">
+    <span class="chip active" onclick="setDiet('')">All</span>
+    <span class="chip" onclick="setDiet('Vegan')">🌱 Vegan</span>
+    <span class="chip" onclick="setDiet('Vegetarian')">🥦 Vegetarian</span>
+    <span class="chip" onclick="setDiet('Gluten-Free')">🌾 Gluten-Free</span>
+    <span class="chip" onclick="setDiet('Halal')">☪️ Halal</span>
+  </div>
+</div>
+
+<!-- RESTAURANTS -->
+<div class="section" id="restaurants">
+  <div class="section-header">
+    <div>
+      <h2>All Restaurants</h2>
+      <p id="results-count"></p>
+    </div>
+  </div>
+  <div class="restaurant-grid" id="restaurant-grid"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" id="modal-content">
+    <div class="modal-header">
+      <h2 id="modal-name"></h2>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-emoji" id="modal-emoji"></div>
+      <div class="modal-detail">
+        <div class="modal-row"><strong>Cuisine</strong><span id="modal-cuisine"></span></div>
+        <div class="modal-row"><strong>Location</strong><span id="modal-location"></span></div>
+        <div class="modal-row"><strong>Hours</strong><span id="modal-hours"></span></div>
+        <div class="modal-row"><strong>Capacity</strong><span id="modal-capacity"></span></div>
+        <div class="modal-row"><strong>Dietary</strong><span id="modal-dietary"></span></div>
+        <div class="modal-row"><strong>Phone</strong><span id="modal-phone"></span></div>
+      </div>
+      <button class="modal-btn" id="modal-book-btn">Book this table with Aria ✨</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2026 <strong>The Diner</strong> — Powered by Salesforce Agentforce &amp; Data Cloud</p>
+  <p style="margin-top:.4rem">Aria is your AI dining host — chat with her anytime using the button below.</p>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     ARIA CHAT WIDGET
+     Replace this comment block with the
+     Messaging for Web snippet from Salesforce
+     Setup → Messaging for Web → View Code Snippet
+═══════════════════════════════════════════ -->
+<!--
+<script type="text/javascript">
+    window.embeddedservice_bootstrap.settings.language = 'en_US';
+    window.embeddedservice_bootstrap.init(
+        'ORG_ID',
+        'CHANNEL_NAME',
+        'https://YOUR_ORG.my.salesforce.com/embeddedservice/...',
+        { scrt2URL: 'https://YOUR_SCRT_URL' }
+    );
+</script>
+-->
+
+<!-- Messaging for Web — Aria Agent -->
+<script type='text/javascript'>
+    function initEmbeddedMessaging() {
+        try {
+            embeddedservice_bootstrap.settings.language = 'en_US';
+            embeddedservice_bootstrap.init(
+                '00DWC00000DKeY5',
+                'Aria',
+                'https://orgfarm-ebd7378759--devorg.sandbox.my.site.com/ESWAria1782234520447',
+                {
+                    scrt2URL: 'https://orgfarm-ebd7378759--devorg.sandbox.my.salesforce-scrt.com'
+                }
+            );
+        } catch (err) {
+            console.error('Error loading Embedded Messaging: ', err);
+        }
+    };
+</script>
+<script type='text/javascript' src='https://orgfarm-ebd7378759--devorg.sandbox.my.site.com/ESWAria1782234520447/assets/js/bootstrap.min.js' onload='initEmbeddedMessaging()'></script>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const EMOJI_MAP = {
+  'Italian':'🍝','Japanese':'🍣','Mexican':'🌮','American':'🍔',
+  'French':'🥐','Mediterranean':'🫒','British':'🍺','Indian':'🍛',
+  'Brazilian':'🥩','Contemporary Brazilian':'🥩','Latin American':'🍹'
+};
+
+const RESTAURANTS = [
+  {name:"Borough Market Table",cuisine:"British",location:"8 Southwark St, Borough Market, London SE1 1TL, UK",hours:"Mon-Sat 11:00 AM - 10:00 PM",capacity:70,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"+44 20 7946 0101",city:"London"},
+  {name:"Deep Dish House",cuisine:"American",location:"14 W Randolph St, Loop, Chicago, IL 60601",hours:"Mon-Sun 11:00 AM - 11:00 PM",capacity:100,dietary:"Vegetarian, Gluten-Free",phone:"(312) 555-0101",city:"Chicago"},
+  {name:"El Rancho",cuisine:"Mexican",location:"789 Elm St, New York, NY 10003",hours:"Mon-Sun 10:00 AM - 11:00 PM",capacity:100,dietary:"Vegetarian, Gluten-Free",phone:"(212) 555-0303",city:"New York"},
+  {name:"Jardins Fusion",cuisine:"Contemporary Brazilian",location:"Rua Oscar Freire 900, Jardins, Sao Paulo - SP 01426-001, Brazil",hours:"Tue-Sun 12:00 PM - 11:00 PM",capacity:70,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"+55 11 3062-0202",city:"São Paulo"},
+  {name:"La Bella Italia",cuisine:"Italian",location:"123 Main St, New York, NY 10001",hours:"Mon-Sun 11:00 AM - 11:00 PM",capacity:80,dietary:"Vegetarian, Gluten-Free, Vegan",phone:"(212) 555-0101",city:"New York"},
+  {name:"Le Marais Bistrot",cuisine:"French",location:"25 Rue de Bretagne, Le Marais, Paris 75003, France",hours:"Tue-Sun 12:00 PM - 11:00 PM",capacity:55,dietary:"Vegetarian",phone:"+33 1 42 72 0101",city:"Paris"},
+  {name:"Maison Paris",cuisine:"French",location:"555 Upper East Side, New York, NY 10021",hours:"Tue-Sun 6:00 PM - 11:00 PM",capacity:50,dietary:"Vegetarian",phone:"(212) 555-0505",city:"New York"},
+  {name:"Mission Taqueria",cuisine:"Mexican",location:"2500 Mission St, Mission District, San Francisco, CA 94110",hours:"Mon-Sun 10:00 AM - 11:00 PM",capacity:75,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"(415) 555-0202",city:"San Francisco"},
+  {name:"Montmartre Wine Bar",cuisine:"French",location:"12 Rue Lepic, Montmartre, Paris 75018, France",hours:"Wed-Mon 5:00 PM - 12:00 AM",capacity:45,dietary:"Vegetarian, Gluten-Free",phone:"+33 1 42 54 0202",city:"Paris"},
+  {name:"Nob Hill Sushi",cuisine:"Japanese",location:"1100 California St, Nob Hill, San Francisco, CA 94108",hours:"Tue-Sun 12:00 PM - 10:00 PM",capacity:55,dietary:"Vegetarian, Vegan",phone:"(415) 555-0303",city:"San Francisco"},
+  {name:"Sakura Garden",cuisine:"Japanese",location:"456 Oak Ave, New York, NY 10002",hours:"Tue-Sun 12:00 PM - 10:00 PM",capacity:60,dietary:"Vegetarian, Vegan",phone:"(212) 555-0202",city:"New York"},
+  {name:"Shoreditch Curry House",cuisine:"Indian",location:"45 Curtain Rd, Shoreditch, London EC2A 3PT, UK",hours:"Mon-Sun 12:00 PM - 11:00 PM",capacity:65,dietary:"Vegetarian, Vegan, Gluten-Free, Halal",phone:"+44 20 7946 0202",city:"London"},
+  {name:"South Beach Ceviche",cuisine:"Latin American",location:"1500 Ocean Dr, South Beach, Miami Beach, FL 33139",hours:"Mon-Sun 12:00 PM - 11:00 PM",capacity:80,dietary:"Vegetarian, Gluten-Free",phone:"(305) 555-0101",city:"Miami"},
+  {name:"Sunset Strip Kitchen",cuisine:"American",location:"8752 Sunset Blvd, West Hollywood, Los Angeles, CA 90069",hours:"Mon-Sun 11:00 AM - 12:00 AM",capacity:110,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"(310) 555-0101",city:"Los Angeles"},
+  {name:"The Brooklyn Grill",cuisine:"American",location:"321 Park Blvd, Brooklyn, NY 11201",hours:"Mon-Sun 11:00 AM - 12:00 AM",capacity:120,dietary:"Vegetarian, Gluten-Free",phone:"(718) 555-0404",city:"New York"},
+  {name:"The Golden Gate Bistro",cuisine:"American",location:"1 Ferry Building, Embarcadero, San Francisco, CA 94111",hours:"Mon-Sun 11:00 AM - 11:00 PM",capacity:90,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"(415) 555-0101",city:"San Francisco"},
+  {name:"Venice Beach Grill",cuisine:"Mediterranean",location:"30 Windward Ave, Venice Beach, Los Angeles, CA 90291",hours:"Mon-Sun 9:00 AM - 10:00 PM",capacity:85,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"(310) 555-0202",city:"Los Angeles"},
+  {name:"Vila Madalena Churrasco",cuisine:"Brazilian",location:"Rua Aspicuelta 200, Vila Madalena, Sao Paulo - SP 05433-010, Brazil",hours:"Mon-Sun 12:00 PM - 11:00 PM",capacity:120,dietary:"Gluten-Free",phone:"+55 11 3813-0101",city:"São Paulo"},
+  {name:"Wicker Park Ramen",cuisine:"Japanese",location:"2001 W North Ave, Wicker Park, Chicago, IL 60647",hours:"Tue-Sun 11:30 AM - 10:00 PM",capacity:60,dietary:"Vegetarian, Vegan",phone:"(312) 555-0202",city:"Chicago"},
+  {name:"Wynwood Tap House",cuisine:"American",location:"2500 NW 2nd Ave, Wynwood, Miami, FL 33127",hours:"Wed-Sun 5:00 PM - 12:00 AM",capacity:95,dietary:"Vegetarian, Vegan, Gluten-Free",phone:"(305) 555-0202",city:"Miami"}
+];
+
+// ─────────────────────────────────────────────
+// INIT FILTERS
+// ─────────────────────────────────────────────
+let activeDiet = '';
+
+function initFilters() {
+  const cuisines = [...new Set(RESTAURANTS.map(r => r.cuisine))].sort();
+  const cities   = [...new Set(RESTAURANTS.map(r => r.city))].sort();
+  const cSelect  = document.getElementById('cuisine-filter');
+  const citySelect = document.getElementById('city-filter');
+  cuisines.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; cSelect.appendChild(o); });
+  cities.forEach(c   => { const o = document.createElement('option'); o.value=c; o.textContent=c; citySelect.appendChild(o); });
+}
+
+function setDiet(d) {
+  activeDiet = d;
+  document.querySelectorAll('#diet-chips .chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  filterRestaurants();
+}
+
+// ─────────────────────────────────────────────
+// FILTER & RENDER
+// ─────────────────────────────────────────────
+function filterRestaurants() {
+  const q    = document.getElementById('search-input').value.toLowerCase();
+  const cuisine = document.getElementById('cuisine-filter').value;
+  const city    = document.getElementById('city-filter').value;
+
+  const filtered = RESTAURANTS.filter(r => {
+    const matchQ = !q || r.name.toLowerCase().includes(q) || r.city.toLowerCase().includes(q) || r.cuisine.toLowerCase().includes(q) || r.location.toLowerCase().includes(q);
+    const matchC = !cuisine || r.cuisine === cuisine;
+    const matchCity = !city || r.city === city;
+    const matchD = !activeDiet || r.dietary.includes(activeDiet);
+    return matchQ && matchC && matchCity && matchD;
+  });
+
+  renderGrid(filtered);
+}
+
+function renderGrid(list) {
+  const grid = document.getElementById('restaurant-grid');
+  const count = document.getElementById('results-count');
+  count.textContent = list.length + ' restaurant' + (list.length !== 1 ? 's' : '') + ' found';
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="no-results"><div class="emoji">🍽️</div><p>No restaurants match your search.<br>Try asking Aria — she knows them all!</p><button class="btn-book" style="margin:.75rem auto 0;display:block;max-width:200px" onclick="openAria()">Ask Aria ✨</button></div>`;
+    return;
+  }
+
+  // Group by city
+  const byCityMap = {};
+  list.forEach(r => { (byCityMap[r.city] = byCityMap[r.city] || []).push(r); });
+  const cityOrder = ['New York','San Francisco','Los Angeles','Chicago','Miami','London','Paris','São Paulo'];
+  const cities = [...new Set(list.map(r => r.city))].sort((a,b) => { const ai=cityOrder.indexOf(a), bi=cityOrder.indexOf(b); return (ai<0?99:ai)-(bi<0?99:bi); });
+
+  grid.innerHTML = cities.map(city => `
+    <div class="city-section" style="grid-column:1/-1">
+      <div class="city-label"><h3>📍 ${city}</h3></div>
+    </div>
+    ${(byCityMap[city]||[]).map(r => cardHTML(r)).join('')}
+  `).join('');
+}
+
+function cardHTML(r) {
+  const emoji = EMOJI_MAP[r.cuisine] || '🍽️';
+  const bgColors = {'Italian':'#fdf0e0','Japanese':'#f0f7f4','Mexican':'#fff5e0','American':'#f0f4f8','French':'#f5f0f8','Mediterranean':'#f0f8f5','British':'#f5f0eb','Indian':'#fff8f0','Brazilian':'#f0f8e8','Contemporary Brazilian':'#f0f8e8','Latin American':'#fff5f0'};
+  const bg = bgColors[r.cuisine] || '#f5f5f5';
+  const diets = r.dietary.split(',').map(d => `<span class="diet-tag">${d.trim()}</span>`).join('');
+  return `
+    <div class="card" onclick="openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">
+      <div class="card-img" style="background:${bg}">${emoji}</div>
+      <div class="card-body">
+        <div class="card-header">
+          <div class="card-name">${r.name}</div>
+          <span class="cuisine-tag">${r.cuisine}</span>
+        </div>
+        <div class="card-location">📍 ${r.location.split(',').slice(-2).join(',').trim()}</div>
+        <div class="card-meta">
+          <span>🕐 ${r.hours.split(' ')[0]}</span>
+          <span>👥 Up to ${r.capacity}</span>
+          <span>📞 ${r.phone}</span>
+        </div>
+        <div class="dietary-tags">${diets}</div>
+        <div class="card-actions">
+          <button class="btn-book" onclick="event.stopPropagation();bookWithAria('${r.name}')">Book with Aria ✨</button>
+          <button class="btn-info" onclick="event.stopPropagation();openModal(${JSON.stringify(r).replace(/"/g,'&quot;')})">Info</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────
+function openModal(r) {
+  const emoji = EMOJI_MAP[r.cuisine] || '🍽️';
+  document.getElementById('modal-name').textContent    = r.name;
+  document.getElementById('modal-emoji').textContent   = emoji;
+  document.getElementById('modal-cuisine').textContent = r.cuisine;
+  document.getElementById('modal-location').textContent = r.location;
+  document.getElementById('modal-hours').textContent   = r.hours;
+  document.getElementById('modal-capacity').textContent = r.capacity + ' guests';
+  document.getElementById('modal-dietary').textContent  = r.dietary;
+  document.getElementById('modal-phone').textContent   = r.phone;
+  document.getElementById('modal-book-btn').onclick = () => bookWithAria(r.name);
+  document.getElementById('modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('modal') || e.type === 'click' && !e.target.closest('.modal')) {
+    document.getElementById('modal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+
+// ─────────────────────────────────────────────
+// ARIA INTEGRATION
+// ─────────────────────────────────────────────
+function openAria(msg) {
+  // When Messaging for Web snippet is wired, this triggers the chat widget.
+  // For now, show a prompt that the user can copy to the Aria agent.
+  if (typeof embeddedservice_bootstrap !== 'undefined') {
+    embeddedservice_bootstrap.utilAPI.launchChat();
+  } else {
+    alert('💬 To chat with Aria, the Messaging for Web snippet needs to be wired in the HTML.\n\nIn the meantime, test via Salesforce Agent Builder!');
+  }
+}
+
+function bookWithAria(restaurantName) {
+  closeModal();
+  openAria(`I want to book a table at ${restaurantName}`);
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+initFilters();
+filterRestaurants();
+</script>
+</body>
+</html>
