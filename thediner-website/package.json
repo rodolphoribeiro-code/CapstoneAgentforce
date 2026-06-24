@@ -1,0 +1,12 @@
+{
+  "name": "thediner-website",
+  "version": "1.0.0",
+  "description": "The Diner — restaurant discovery site with Aria AI agent",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
