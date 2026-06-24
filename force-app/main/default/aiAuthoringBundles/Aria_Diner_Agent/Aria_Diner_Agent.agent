@@ -375,6 +375,9 @@ subagent reservation_hub:
                   Want to make a new booking, change one, or cancel?
 
         actions:
+            view_reservations: @actions.get_my_reservations
+                description: "Show the customer their upcoming and past reservations"
+                with customerEmail = @variables.customer_email
             go_to_create: @utils.transition to @subagent.create_reservation
                 description: "Customer wants to make a new reservation"
                 available when @variables.customer_profile_greeted == True
@@ -392,6 +395,23 @@ subagent reservation_hub:
         set @variables.customer_profile_greeted = True
 
     actions:
+        get_my_reservations:
+            target: "apex://GetMyReservations"
+            description: "Fetch all reservations for the authenticated customer"
+            inputs:
+                customerEmail: string
+                    description: "Customer email address"
+                    is_required: True
+            outputs:
+                found: boolean
+                    filter_from_agent: True
+                totalCount: object
+                    complex_data_type_name: "lightning__integerType"
+                    filter_from_agent: True
+                reservationsSummary: string
+                    filter_from_agent: False
+                noReservationsMessage: string
+                    filter_from_agent: False
         get_customer_profile:
             target: "apex://GetCustomerProfile"
             description: "Retrieve unified customer profile — booking history, VIP status, and favourite restaurant"
