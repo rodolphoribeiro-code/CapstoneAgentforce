@@ -124,7 +124,7 @@ start_agent aria_router:
             go_to_post_interaction: @utils.transition to @subagent.post_interaction
                 description: "Customer is done and ready to end the session or rate their experience"
             go_to_escalation: @utils.transition to @subagent.escalation
-                description: "Customer explicitly requests to speak with a human agent"
+                description: "Customer has a problem, complaint, billing issue, or explicitly asks for help from the team — log a support case"
             go_to_ambiguous: @utils.transition to @subagent.ambiguous_question
                 description: "Customer's intent is unclear and needs clarification"
             go_to_off_topic: @utils.transition to @subagent.off_topic
@@ -689,36 +689,27 @@ subagent post_interaction:
                     filter_from_agent: False
 
 subagent escalation:
-    description: "Handles escalation to a human agent. Creates a Service Cloud case and transfers the customer via messaging channel."
+    description: "Creates a Service Cloud Case to log the customer's issue. Our team will follow up. No live transfer needed."
     reasoning:
         instructions: ->
             if @variables.case_created == False:
                 run @actions.create_case
                     with contactId = @variables.customer_contact_id
                     with reason = "Customer escalation"
-                    with description = "Customer requested to speak with a human agent."
+                    with description = "Customer requested support via Aria."
                     set @variables.case_created = @outputs.success
                     set @variables.case_number = @outputs.caseNumber
 
             if @variables.case_created == True:
-                | Your support case {!@variables.case_number} has been created.
-                  Let me connect you with a team member right away!
+                | Done! Your support case {!@variables.case_number} has been logged and our team will reach out to you shortly.
+                  Is there anything else I can help you with in the meantime?
 
             if @variables.case_created == False:
-                | Connecting you with our team now!
+                | On it — logging your case now!
 
         actions:
-            create_case: @actions.create_case
-                description: "REQUIRED FIRST STEP: log a support case before transferring. Always call this before connect_to_human."
-                with contactId = @variables.customer_contact_id
-                with reason = @variables.escalation_reason
-                with description = ...
-                set @variables.case_created = @outputs.success
-                set @variables.case_number = @outputs.caseNumber
-                available when @variables.case_created == False
-            connect_to_human: @utils.escalate
-                description: "Transfer to a live human agent — only after the case has been created"
-                available when @variables.case_created == True
+            go_back: @utils.transition to @subagent.aria_router
+                description: "Case logged — customer wants to do something else or ask another question"
 
     actions:
         create_case:
