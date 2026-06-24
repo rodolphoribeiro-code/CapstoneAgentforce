@@ -13,6 +13,9 @@ public without sharing class CreateBooking {
         @InvocableVariable(label='Customer Name' required=true)
         public String customerName;
 
+        @InvocableVariable(label='Customer Email')
+        public String customerEmail;
+
         @InvocableVariable(label='Special Requests')
         public String specialRequests;
     }
@@ -58,11 +61,29 @@ public without sharing class CreateBooking {
                 continue;
             }
 
+            // Auto-create or find Contact if email provided
+            String emailVal = String.isNotBlank(req.customerEmail) ? req.customerEmail.toLowerCase().trim() : null;
+            if (String.isNotBlank(emailVal)) {
+                List<Contact> existing = Database.queryWithBinds(
+                    'SELECT Id FROM Contact WHERE Email = :emailVal LIMIT 1',
+                    new Map<String, Object>{ 'emailVal' => emailVal },
+                    AccessLevel.SYSTEM_MODE
+                );
+                if (existing.isEmpty()) {
+                    String fullName = req.customerName.trim();
+                    Integer spaceIdx = fullName.indexOf(' ');
+                    String firstName = spaceIdx > 0 ? fullName.substring(0, spaceIdx) : '';
+                    String lastName  = spaceIdx > 0 ? fullName.substring(spaceIdx + 1) : fullName;
+                    insert new Contact(FirstName = firstName, LastName = lastName, Email = emailVal);
+                }
+            }
+
             Booking__c booking = new Booking__c(
                 Restaurant__c = restaurant.Id,
                 Booking_Date__c = req.bookingDateTime,
                 Party_Size__c = req.partySize,
                 Customer_Name__c = req.customerName,
+                Customer_Email__c = emailVal,
                 Status__c = 'Confirmed',
                 Special_Requests__c = req.specialRequests
             );

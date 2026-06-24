@@ -437,7 +437,9 @@ subagent create_reservation:
             transition to @subagent.authentication_gate
     reasoning:
         instructions: ->
-            | Collect the restaurant name, date, time, and party size from the customer.
+            | Collect the restaurant name, date, time, party size, customer name, and email from the customer.
+              If the customer is already authenticated, use {!@variables.customer_email} for the email.
+              Otherwise ask the customer for their name and email address — needed to send a booking confirmation.
               Use {!@actions.get_restaurant_info} to look up the restaurant.
               Use {!@actions.check_availability} to check if the slot is open.
               Once availability is confirmed, call {!@actions.create_booking} immediately — do NOT ask the customer to confirm again in text, the system handles confirmation.
@@ -446,11 +448,12 @@ subagent create_reservation:
 
         actions:
             create_booking: @actions.create_booking
-                description: "Create the reservation once you have restaurant name, date, time, and party size"
+                description: "Create the reservation once you have restaurant name, date, time, party size, customer name, and email"
                 with restaurantName = ...
                 with bookingDateTime = ...
                 with partySize = ...
                 with customerName = @variables.customer_name
+                with customerEmail = @variables.customer_email
                 with specialRequests = ...
                 set @variables.booking_number = @outputs.bookingNumber
             go_back: @utils.transition to @subagent.aria_router
@@ -524,6 +527,8 @@ subagent create_reservation:
                 customerName: string
                     description: "Name for the reservation"
                     is_required: True
+                customerEmail: string
+                    description: "Customer email address — used to create or link a Contact record"
                 specialRequests: string
                     description: "Any special requests or dietary needs"
             outputs:
