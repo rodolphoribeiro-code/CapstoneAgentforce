@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Queue xmlns="http://soap.sforce.com/2006/04/metadata">
+    <doesIncludeBosses>false</doesIncludeBosses>
+    <doesSendEmailToMembers>false</doesSendEmailToMembers>
+    <name>Diner Support Queue</name>
+    <queueMembers>
+        <users>
+            <user>rodolpho.ribeiro@salesforce.com.orgfarm.devorg</user>
+        </users>
+    </queueMembers>
+    <queueRoutingConfig>Diner_Support_Routing</queueRoutingConfig>
+    <queueSobject>
+        <sobjectType>MessagingSession</sobjectType>
+    </queueSobject>
+</Queue>

@@ -14,6 +14,12 @@ No-shows without any prior cancellation will be charged the full no-show fee.
 To cancel, customers can use the Aria assistant, call the restaurant directly, or email the reservation team.
 Cancellations for group bookings (8 or more guests) must be made at least 48 hours in advance to avoid charges.
 
+LA BELLA ITALIA SPECIAL CANCELLATION POLICY
+
+Cancellations at La Bella Italia made within 24 hours of the booking time cannot be processed through the Aria assistant.
+These must be handled directly by a human support agent who will review the booking and applicable fees.
+If you need to cancel a La Bella Italia reservation within 24 hours, Aria will transfer you to a live support agent.
+
 ---
 
 GROUP BOOKING POLICY
@@ -94,6 +100,12 @@ Reservations can be modified up to 2 hours before the booking time at no charge.
 Party size changes of more than 4 guests require 24 hours notice.
 Changing the restaurant location is treated as a cancellation of the original booking and a new booking — the cancellation policy applies.
 Date and time changes within the same restaurant can be made up to 2 hours before the original booking time.
+
+LA BELLA ITALIA SPECIAL MODIFICATION POLICY
+
+Modifications to La Bella Italia reservations made within 24 hours of the booking date and time cannot be processed through the Aria assistant.
+Because cancellation charges may apply when modifying close to the booking time, these cases require review by a human support agent.
+If you need to modify a La Bella Italia reservation within 24 hours of the booking, Aria will transfer you to a live support agent who will assist with any applicable charges.
 
 ---
 

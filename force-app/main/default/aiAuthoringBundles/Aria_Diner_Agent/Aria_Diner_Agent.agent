@@ -28,6 +28,8 @@ variables:
         description: "Salesforce Id of the restaurant selected by the customer"
     escalation_reason: mutable string = ""
         description: "Reason for escalating to a human agent"
+    billing_verified: mutable boolean = False
+        description: "True after a reservation record has been found for a billing/charge dispute"
     case_created: mutable boolean = False
         description: "True after a Service Cloud Case has been created for this escalation"
     case_number: mutable string = ""
@@ -123,8 +125,10 @@ start_agent aria_router:
                 available when @variables.customer_authenticated == True
             go_to_post_interaction: @utils.transition to @subagent.post_interaction
                 description: "Customer is done and ready to end the session or rate their experience"
+            go_to_billing: @utils.transition to @subagent.billing_issue
+                description: "Customer reports an incorrect charge, billing dispute, or issue with a previous reservation"
             go_to_escalation: @utils.transition to @subagent.escalation
-                description: "Customer has a problem, complaint, billing issue, or explicitly asks for help from the team — log a support case"
+                description: "Customer explicitly asks for a human agent, or has a general complaint or problem that is NOT a billing/charge dispute"
             go_to_ambiguous: @utils.transition to @subagent.ambiguous_question
                 description: "Customer's intent is unclear and needs clarification"
             go_to_off_topic: @utils.transition to @subagent.off_topic
@@ -299,7 +303,9 @@ subagent auth_verify_code:
     reasoning:
         instructions: ->
             | A code just landed in {!@variables.customer_email} — ask them to drop it here!
-              Use {!@actions.collect_code} to grab the code, then {!@actions.verify_code} to check it.
+              STEP 1: ALWAYS call {!@actions.collect_code} first to save the code the customer types. Do NOT skip this step.
+              STEP 2: Only AFTER collect_code succeeds, call {!@actions.verify_code} to validate it.
+              Never call verify_code directly — always collect_code first.
               If it works, great — on to the reservations!
               If not, share the error and offer to try again or get a team member involved.
               Do NOT use the show_command tool. Always write your response as direct text.
@@ -456,9 +462,14 @@ subagent create_reservation:
               If already verified, use {!@variables.customer_email} and {!@variables.customer_name}.
               IMPORTANT: bookingDateTime must be ISO 8601 like 2026-07-30T19:00:00.
               Convert relative dates on the spot — "tomorrow" = today + 1, "next Friday" = calculate it.
+              NEVER book a date in the past — if the resolved date is before today (2026-06-24), ask the customer to pick a future date.
               Once you have everything, call {!@actions.create_booking} right away — no asking permission first.
               Do NOT say "I'm going to book" or "being processed" — just call the action and share the booking number.
+              After the booking is created, explicitly tell the customer that a confirmation email has been sent to their email address.
               Do NOT use the show_command tool. Always write your response as direct text.
+              After the booking is confirmed, ask: "Is there anything else I can help with?"
+              Wait for the customer to respond. Only call go_back once they say they are done or have nothing else to ask.
+              Do NOT mention ratings or ask about their experience here.
 
         actions:
             create_booking: @actions.create_booking
@@ -471,7 +482,7 @@ subagent create_reservation:
                 with specialRequests = ...
                 set @variables.booking_number = @outputs.bookingNumber
             go_back: @utils.transition to @subagent.aria_router
-                description: "Reservation complete or customer wants to do something else"
+                description: "Customer says they are done and have nothing else to ask — transition back to router"
 
     actions:
         get_restaurant_info:
@@ -554,7 +565,7 @@ subagent create_reservation:
                     filter_from_agent: False
 
 subagent modify_reservation:
-    description: "Modifies an existing reservation for a verified customer. Asks for booking number and what needs to change."
+    description: "Modifies an existing reservation for a verified customer. Asks for booking number and what needs to change. For La Bella Italia, if the booking is within 24 hours, transfers to a human agent."
     before_reasoning:
         if @variables.customer_authenticated == False:
             transition to @subagent.authentication_gate
@@ -562,7 +573,12 @@ subagent modify_reservation:
         instructions: ->
             | Let's update that reservation! Grab their booking number (BKG-XXXX) if you don't have it yet.
               Ask what needs changing — date, time, party size, or all of the above.
-              Use {!@actions.modify_booking} to make it happen.
+              IMPORTANT: If the customer gives a relative date like "tomorrow" or "next Friday", convert it to an absolute ISO 8601 date before calling the action.
+              NEVER modify a booking to a date in the past — if the resolved date is before today (2026-06-24), tell the customer and ask them to choose a future date.
+              SPECIAL RULE: If the reservation is at La Bella Italia AND the existing booking date/time is within the next 24 hours, do NOT modify it yourself.
+              In that case, tell the customer: "Modifications to La Bella Italia reservations within 24 hours require review by our support team, as cancellation charges may apply. I'll transfer you now."
+              Then call go_to_escalation.
+              Otherwise, use {!@actions.modify_booking} to make it happen.
               After the update, share the bookingNumber, message, and newStatus from the result.
               Do NOT use the show_command tool. Always write your response as direct text.
 
@@ -574,6 +590,8 @@ subagent modify_reservation:
                 with newDateTime = ...
                 with newPartySize = ...
                 set @variables.booking_number = @outputs.bookingNumber
+            go_to_escalation: @utils.transition to @subagent.escalation
+                description: "La Bella Italia modification within 24 hours — transfer to human agent"
             go_back: @utils.transition to @subagent.aria_router
                 description: "Modification complete or customer wants to do something else"
 
@@ -604,14 +622,17 @@ subagent modify_reservation:
                     filter_from_agent: False
 
 subagent cancel_reservation:
-    description: "Cancels an existing reservation for a verified customer. Asks for booking number and confirms before cancelling."
+    description: "Cancels an existing reservation for a verified customer. Asks for booking number and confirms before cancelling. For La Bella Italia, if the booking is within 24 hours, transfers to a human agent instead."
     before_reasoning:
         if @variables.customer_authenticated == False:
             transition to @subagent.authentication_gate
     reasoning:
         instructions: ->
             | No worries, let's sort that cancellation. Grab their booking number (BKG-XXXX) if needed.
-              Use {!@actions.cancel_booking} to take care of it.
+              IMPORTANT: If the reservation is at La Bella Italia AND the booking date/time is within the next 24 hours, do NOT cancel it yourself.
+              In that case, tell the customer: "La Bella Italia requires cancellations within 24 hours to be handled by our support team. I'll transfer you now."
+              Then transition to escalation.
+              Otherwise, use {!@actions.cancel_booking} to take care of it.
               After cancellation, share the bookingNumber and message from the result.
               Do NOT use the show_command tool. Always write your response as direct text.
 
@@ -621,6 +642,8 @@ subagent cancel_reservation:
                 with bookingId = ...
                 with action = "CANCEL"
                 set @variables.booking_number = @outputs.bookingNumber
+            go_to_escalation: @utils.transition to @subagent.escalation
+                description: "La Bella Italia cancellation within 24 hours — transfer to human agent"
             go_back: @utils.transition to @subagent.aria_router
                 description: "Cancellation complete or customer wants to do something else"
 
@@ -708,30 +731,69 @@ subagent post_interaction:
                 message: string
                     filter_from_agent: False
 
-subagent escalation:
-    description: "Creates a Service Cloud Case to log the customer's issue. Our team will follow up. No live transfer needed."
+subagent billing_issue:
+    description: "Handles billing disputes and issues with previous reservations. Collects email or booking number, verifies the customer has at least one reservation on record, then transfers to a human agent."
     reasoning:
         instructions: ->
-            if @variables.case_created == False:
-                run @actions.create_case
-                    with contactId = @variables.customer_contact_id
-                    with reason = "Customer escalation"
-                    with description = "Customer requested support via Aria."
-                    set @variables.case_created = @outputs.success
-                    set @variables.case_number = @outputs.caseNumber
-
-            if @variables.case_created == True:
-                | Done! Your support case has been logged successfully.
-                  Case number: {!@variables.case_number}
-                  Our support team will reach out to you within the next hour to help resolve your issue.
-                  Is there anything else I can help you with in the meantime?
-
-            if @variables.case_created == False:
-                | On it — logging your case now!
+            | The customer has reported a billing issue or problem with a previous reservation.
+              STEP 1: Ask for their booking number (BKG-XXXX) OR their email address to look up their account.
+              STEP 2: Once you have their email, call {!@actions.verify_reservations} to check if they have any reservations on record.
+              STEP 3a: If reservations are found (found == True), tell the customer their record was found, then say: "Ok, I am transferring you to an agent, please wait for the available agent." Then call {!@actions.go_to_escalation}.
+              STEP 3b: If no reservations are found (found == False), tell the customer: "I wasn't able to find any reservations linked to that email or booking number. Could you double-check the details and try again?"
+              Do NOT transfer to a human if no reservation record is found.
+              Do NOT use the show_command tool. Always write your response as direct text.
 
         actions:
-            go_back: @utils.transition to @subagent.aria_router
-                description: "Case logged — customer wants to do something else or ask another question"
+            verify_reservations: @actions.verify_reservations
+                description: "Look up reservations by customer email to verify they have at least one booking on record"
+                with customerEmail = ...
+            go_to_escalation: @utils.transition to @subagent.escalation
+                description: "Reservation verified — transfer to human agent for billing support"
+                available when @variables.billing_verified == True
+
+    after_reasoning:
+        if @outputs.found == True:
+            set @variables.billing_verified = True
+
+    actions:
+        verify_reservations:
+            target: "apex://GetMyReservations"
+            description: "Check if customer has any reservations on record by email"
+            inputs:
+                customerEmail: string
+                    description: "Customer email address to look up"
+                    is_required: True
+            outputs:
+                found: boolean
+                    filter_from_agent: False
+                totalCount: integer
+                    filter_from_agent: False
+                reservationsSummary: string
+                    filter_from_agent: True
+                noReservationsMessage: string
+                    filter_from_agent: False
+
+subagent escalation:
+    description: "Creates a Service Cloud Case to log the customer's issue, then transfers the chat to a human agent in the Diner Support Queue."
+    reasoning:
+        instructions: ->
+            | If the case has not been created yet, call {!@actions.create_case} right away — no asking permission.
+              Once the case is created, tell the customer their case was logged and share the exact case number from the action output.
+              Then say exactly: "Ok, I am transferring you to an agent, please wait for the available agent."
+              Then call {!@actions.transfer_to_human} to hand off the conversation.
+              If the case is already created, use {!@variables.case_number} to confirm the case, say the same transfer message, then call transfer_to_human.
+
+        actions:
+            create_case: @actions.create_case
+                description: "Create a Salesforce Case — call this once automatically when the customer escalates"
+                with contactId = @variables.customer_contact_id
+                with reason = "Customer escalation"
+                with description = "Customer requested support via Aria."
+                set @variables.case_created = @outputs.success
+                set @variables.case_number = @outputs.caseNumber
+                available when @variables.case_created == False
+            transfer_to_human: @utils.escalate
+                description: "Transfer the chat session to a human agent in the Diner Support Queue"
 
     actions:
         create_case:

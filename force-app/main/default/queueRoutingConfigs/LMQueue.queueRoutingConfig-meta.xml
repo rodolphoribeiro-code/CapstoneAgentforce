@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<QueueRoutingConfig xmlns="http://soap.sforce.com/2006/04/metadata">
+    <capacityWeight>500.0</capacityWeight>
+    <isAttributeBased>false</isAttributeBased>
+    <label>LMQueue</label>
+    <routingModel>MOST_AVAILABLE</routingModel>
+    <routingPriority>1</routingPriority>
+    <userOverflowAssignee>epic.c8c2bf57e7d0@orgfarm.salesforce.com.devorg</userOverflowAssignee>
+</QueueRoutingConfig>

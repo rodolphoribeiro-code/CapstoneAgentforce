@@ -37,8 +37,8 @@ public without sharing class ModifyOrCancelBooking {
 
             String bookId = req.bookingId;
             String queryStr = bookId.startsWith('006') || bookId.length() == 18 || bookId.length() == 15
-                ? 'SELECT Id, Name, Status__c, Booking_Date__c, Party_Size__c, Booking_Value__c, Is_VIP__c, Restaurant__r.Name FROM Booking__c WHERE Id = :bookId LIMIT 1'
-                : 'SELECT Id, Name, Status__c, Booking_Date__c, Party_Size__c, Booking_Value__c, Is_VIP__c, Restaurant__r.Name FROM Booking__c WHERE Name = :bookId LIMIT 1';
+                ? 'SELECT Id, Name, Status__c, Booking_Date__c, Party_Size__c, Booking_Value__c, Is_VIP__c, Customer_Email__c, Restaurant__r.Name FROM Booking__c WHERE Id = :bookId LIMIT 1'
+                : 'SELECT Id, Name, Status__c, Booking_Date__c, Party_Size__c, Booking_Value__c, Is_VIP__c, Customer_Email__c, Restaurant__r.Name FROM Booking__c WHERE Name = :bookId LIMIT 1';
             List<Booking__c> bookings = Database.query(queryStr, AccessLevel.SYSTEM_MODE);
 
             if (bookings.isEmpty()) {
@@ -58,15 +58,31 @@ public without sharing class ModifyOrCancelBooking {
                 continue;
             }
 
+            String custEmail = booking.Customer_Email__c;
+            String restaurantName = booking.Restaurant__r.Name;
+            String bkgName = booking.Name;
+
             if (req.action == 'CANCEL') {
                 booking.Status__c = 'Cancelled';
                 update booking;
                 res.success = true;
                 res.newStatus = 'Cancelled';
-                res.message = 'Booking ' + booking.Name + ' at ' + booking.Restaurant__r.Name + ' has been successfully cancelled.';
+                res.message = 'Booking ' + bkgName + ' at ' + restaurantName + ' has been successfully cancelled.';
+                String dateStr = booking.Booking_Date__c != null ? booking.Booking_Date__c.format('MMMM d, yyyy') : '';
+                String timeStr = booking.Booking_Date__c != null ? booking.Booking_Date__c.format('h:mm a') : '';
+                Boolean emailSent = DinerEmailHelper.sendBookingCancellation(
+                    custEmail, bkgName, restaurantName, dateStr, timeStr, Integer.valueOf(booking.Party_Size__c)
+                );
+                if (emailSent) res.message += ' A cancellation confirmation has been sent to ' + custEmail + '.';
 
             } else if (req.action == 'MODIFY') {
                 if (req.newDateTime != null) {
+                    if (req.newDateTime < DateTime.now()) {
+                        res.success = false;
+                        res.message = 'Cannot modify booking to a date in the past. Please choose a future date.';
+                        results.add(res);
+                        continue;
+                    }
                     booking.Booking_Date__c = req.newDateTime;
                 }
                 if (req.newPartySize != null && req.newPartySize > 0) {
@@ -76,9 +92,18 @@ public without sharing class ModifyOrCancelBooking {
                 update booking;
                 res.success = true;
                 res.newStatus = 'Modified';
-                res.message = 'Booking ' + booking.Name + ' at ' + booking.Restaurant__r.Name + ' has been updated successfully.';
+                res.message = 'Booking ' + bkgName + ' at ' + restaurantName + ' has been updated successfully.';
+                DateTime bookingDT = req.newDateTime != null ? req.newDateTime : booking.Booking_Date__c;
                 if (req.newDateTime != null) {
-                    res.message += ' New date/time: ' + req.newDateTime.format('MMMM d, yyyy') + ' at ' + req.newDateTime.format('h:mm a') + '.';
+                    res.message += ' New date/time: ' + bookingDT.format('MMMM d, yyyy') + ' at ' + bookingDT.format('h:mm a') + '.';
+                }
+                Integer partySize = req.newPartySize != null ? req.newPartySize : Integer.valueOf(booking.Party_Size__c);
+                Boolean emailSent = DinerEmailHelper.sendBookingModification(
+                    custEmail, bkgName, restaurantName,
+                    bookingDT.format('MMMM d, yyyy'), bookingDT.format('h:mm a'), partySize
+                );
+                if (emailSent) {
+                    res.message += ' A confirmation email with your updated details has been sent to ' + custEmail + '.';
                 }
 
             } else {

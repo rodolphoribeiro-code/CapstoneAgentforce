@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<BotVersion xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>v20</fullName>
+    <articleAnswersGPTEnabled>false</articleAnswersGPTEnabled>
+    <botDialogs>
+        <botSteps>
+            <botMessages>
+                <message>Hey! I&apos;m Aria, your guide to The Diner 🍽️ Looking for a great spot, need to sort a booking, or just have questions? What can I do for you today?</message>
+                <messageIdentifier>f08575c2-1523-4547-9526-47dc946917f9</messageIdentifier>
+            </botMessages>
+            <stepIdentifier>f2a6c35e-fb0c-4732-9078-8a813c59021e</stepIdentifier>
+            <type>Message</type>
+        </botSteps>
+        <botSteps>
+            <stepIdentifier>1e9f4fba-40ea-4aa3-a7da-54eeefc4137a</stepIdentifier>
+            <type>Wait</type>
+        </botSteps>
+        <developerName>Welcome</developerName>
+        <isPlaceholderDialog>false</isPlaceholderDialog>
+        <label>Welcome</label>
+        <showInFooterMenu>false</showInFooterMenu>
+    </botDialogs>
+    <botDialogs>
+        <botSteps>
+            <botMessages>
+                <message>Oops, something went sideways on my end! Give it another try — or just say &apos;human&apos; and I&apos;ll connect you with the team.</message>
+                <messageIdentifier>7da140c8-7ffe-46af-8ea6-8235ceb1b22a</messageIdentifier>
+            </botMessages>
+            <stepIdentifier>f9c54ca0-2d04-4f21-ae3a-86dd0ea13956</stepIdentifier>
+            <type>Message</type>
+        </botSteps>
+        <botSteps>
+            <stepIdentifier>b959462d-7b1e-40ad-bc0d-b20fdff39761</stepIdentifier>
+            <type>Wait</type>
+        </botSteps>
+        <developerName>Rich_Content_Error_Handling</developerName>
+        <isPlaceholderDialog>false</isPlaceholderDialog>
+        <label>Error Handler</label>
+        <showInFooterMenu>false</showInFooterMenu>
+    </botDialogs>
+    <botDialogs>
+        <botSteps>
+            <conversationSystemMessage>
+                <type>Transfer</type>
+            </conversationSystemMessage>
+            <stepIdentifier>0b399813-8350-4776-a336-4f8e520b0834</stepIdentifier>
+            <type>SystemMessage</type>
+        </botSteps>
+        <developerName>Transfer_To_Agent</developerName>
+        <isPlaceholderDialog>false</isPlaceholderDialog>
+        <label>Transfer To Agent</label>
+        <showInFooterMenu>false</showInFooterMenu>
+    </botDialogs>
+    <citationsEnabled>false</citationsEnabled>
+    <conversationDefinitionPlanners>
+        <genAiPlannerName>Aria_Diner_Agent_v20</genAiPlannerName>
+    </conversationDefinitionPlanners>
+    <conversationSystemDialogs>
+        <dialog>Rich_Content_Error_Handling</dialog>
+        <type>ErrorHandling</type>
+    </conversationSystemDialogs>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>Runtime condition evaluation for if statements</description>
+        <developerName>AgentScriptInternal_condition_1</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Runtime Condition 1</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Number</dataType>
+        <description>Total number of bookings for this customer</description>
+        <developerName>customer_total_bookings</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Total Bookings</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the VIP/profile greeting has been delivered — routing actions become available after this</description>
+        <developerName>customer_profile_greeted</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Profile Greeted</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>VIP tier: Standard, VIP, or Gold VIP</description>
+        <developerName>customer_vip_tier</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Vip Tier</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Email address provided by the customer for identity verification</description>
+        <developerName>customer_email</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Email</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Restaurant the customer has booked most</description>
+        <developerName>customer_favourite_restaurant</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Favourite Restaurant</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>The agent instructions</description>
+        <developerName>AgentScriptInternal_agent_instructions</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Agent Instructions</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Message returned by send_code to show the customer</description>
+        <developerName>otp_send_message</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Send Message</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the customer has been verified via email and booking number</description>
+        <developerName>customer_authenticated</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Authenticated</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True if customer has 5 or more confirmed bookings</description>
+        <developerName>customer_is_vip</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Is Vip</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>One-line profile summary for agent personalisation</description>
+        <developerName>customer_profile_summary</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Profile Summary</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after send_code confirms a Contact exists for the given email</description>
+        <developerName>otp_contact_found</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Contact Found</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True while the customer is in the middle of the identity verification flow</description>
+        <developerName>auth_in_progress</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Auth In Progress</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>The next topic to be visited</description>
+        <developerName>AgentScriptInternal_next_topic</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Next Topic</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>6-digit verification code entered by the customer</description>
+        <developerName>otp_code</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Code</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the DSAT survey has been prompted to the customer</description>
+        <developerName>dsat_started</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Dsat Started</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Salesforce Id of the restaurant selected by the customer</description>
+        <developerName>restaurant_id</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Restaurant Id</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after GetCustomerProfile has been called for this session</description>
+        <developerName>customer_profile_loaded</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Profile Loaded</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Customer satisfaction rating 1 to 5 collected from the customer</description>
+        <developerName>dsat_score</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Dsat Score</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after a verification code has been sent to the customer&apos;s email</description>
+        <developerName>otp_sent</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Otp Sent</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Reason for escalating to a human agent</description>
+        <developerName>escalation_reason</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Escalation Reason</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Booking confirmation number from the most recent reservation action</description>
+        <developerName>booking_number</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Booking Number</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after a Service Cloud Case has been created for this escalation</description>
+        <developerName>case_created</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Case Created</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Salesforce Contact Id of the verified customer</description>
+        <developerName>customer_contact_id</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Contact Id</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Case number returned by CreateServiceCase</description>
+        <developerName>case_number</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Case Number</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Existing booking number (BKG-XXXX) provided by the customer for identity verification</description>
+        <developerName>customer_booking_number</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Booking Number</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Text</dataType>
+        <description>Full name of the verified customer</description>
+        <developerName>customer_name</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Customer Name</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <conversationVariables>
+        <dataType>Boolean</dataType>
+        <description>True after the DSAT rating has been collected and logged</description>
+        <developerName>dsat_collected</developerName>
+        <includeInPrompt>false</includeInPrompt>
+        <label>Dsat Collected</label>
+        <visibility>Internal</visibility>
+    </conversationVariables>
+    <copilotPrimaryLanguage>en_US</copilotPrimaryLanguage>
+    <defaultStdObjForContactIdFltrEnabled>false</defaultStdObjForContactIdFltrEnabled>
+    <entryDialog>Welcome</entryDialog>
+    <intentDisambiguationEnabled>false</intentDisambiguationEnabled>
+    <intentV3Enabled>false</intentV3Enabled>
+    <isScriptCompatibleAgent>true</isScriptCompatibleAgent>
+    <knowledgeActionEnabled>false</knowledgeActionEnabled>
+    <knowledgeFallbackEnabled>false</knowledgeFallbackEnabled>
+    <smallTalkEnabled>false</smallTalkEnabled>
+    <staticPromptsEnabled>false</staticPromptsEnabled>
+    <stopRecPrompts>false</stopRecPrompts>
+    <stopWelcomePrompts>false</stopWelcomePrompts>
+    <surfacesEnabled>false</surfacesEnabled>
+    <toneType>Casual</toneType>
+</BotVersion>

@@ -1,0 +1,35 @@
+{
+  "required" : [ "bookingId", "action" ],
+  "unevaluatedProperties" : false,
+  "properties" : {
+    "action" : {
+      "title" : "Action",
+      "description" : "Must be MODIFY",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "bookingId" : {
+      "title" : "Booking Id",
+      "description" : "Booking number (BKG-XXXX) or Salesforce Id",
+      "lightning:type" : "lightning__textType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "newDateTime" : {
+      "title" : "New Date Time",
+      "description" : "New date and time for the reservation",
+      "lightning:type" : "lightning__dateTimeStringType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    },
+    "newPartySize" : {
+      "title" : "New Party Size",
+      "description" : "New party size",
+      "lightning:type" : "lightning__integerType",
+      "lightning:isPII" : false,
+      "copilotAction:isUserInput" : false
+    }
+  },
+  "lightning:type" : "lightning__objectType"
+}
